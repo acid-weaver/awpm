@@ -11,11 +11,12 @@
 
 
 int
-generate_key_from_password(struct sqlite3 *db, const char *username, const char *password, unsigned char *key) {
+generate_key_from_password(struct sqlite3 *db, const int user_id,
+                           const char *password, unsigned char *key) {
     unsigned char salt[SALT_SIZE];
 
-    if (get_salt_by_username(db, username, salt) != 0) {
-        fprintf(stderr, "Failed to retrieve salt for user: %s\n", username);
+    if (get_salt_by_user_id(db, user_id, salt) != 0) {
+        fprintf(stderr, "Failed to retrieve salt for user: %d\n", user_id);
         return -1;
     }
 

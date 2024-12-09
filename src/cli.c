@@ -1,5 +1,6 @@
 #include "cli.h"
 // #include "memory.h"
+#include "encryption.h"
 #include "memory.h"
 #include "utils.h"
 #include "db/database.h"
@@ -25,7 +26,7 @@ void handle_add_new_entry(struct sqlite3 *db, const char *username) {
             .size = 0,
         },
     };
-    unsigned char salt[SALT_SIZE], key[KEY_SIZE];
+    unsigned char key[KEY_SIZE];
     char encrypt_password[INPUT_BUFF_SIZE];
 
     // Add user if not already present
@@ -61,10 +62,9 @@ void handle_add_new_entry(struct sqlite3 *db, const char *username) {
         return;
     }
     credential_data.pswd.len = strlen(credential_data.pswd.ptr);
-    printf("DEBUG. Entered: %s.\n", credential_data.pswd.ptr);
 
     // Prompt for optional mail
-    if (std_input("associated e-mail", "", credential_data.email,
+    if (std_input("associated e-mail", OPTIONAL_PROMPT, credential_data.email,
                   sizeof(credential_data.email)) != 0) {
         fprintf(stderr, "Error reading e-mail.\n");
     }
@@ -75,15 +75,8 @@ void handle_add_new_entry(struct sqlite3 *db, const char *username) {
         return;
     }
 
-    // Derive key using PBKDF2
-    if (get_salt_by_username(db, username, salt) != 0) {
-        fprintf(stderr, "Failed to retrieve salt for user: %s\n", username);
-        return;
-    }
-
-
-    if (!PKCS5_PBKDF2_HMAC(encrypt_password, strlen(encrypt_password), salt, SALT_SIZE, ITERATIONS, EVP_sha256(), KEY_SIZE, key)) {
-        fprintf(stderr, "Failed to derive encryption key.\n");
+    if (generate_key_from_password(db, credential_data.owner, encrypt_password, key) != 0) {
+        fprintf(stderr, "Failed to generate key from password.\n");
         return;
     }
 
@@ -100,9 +93,13 @@ void handle_retrieve_creddata(struct sqlite3 *db, const char *username) {
     char *source = NULL;
     char decrypt_password[INPUT_BUFF_SIZE];
     unsigned char key[KEY_SIZE];
-    unsigned char salt[SALT_SIZE];
     char **results = NULL;
-    int result_count = 0;
+    int result_count = 0, user_id = -1;
+
+    if (get_user_id_by_username(db, username, &user_id) != 0) {
+        fprintf(stderr, "Failed to authenticate user.\n");
+        return;
+    }
 
     // Prompt for source name
     printf("Enter source name to filter (optional, press Enter to skip): ");
@@ -120,17 +117,11 @@ void handle_retrieve_creddata(struct sqlite3 *db, const char *username) {
         fprintf(stderr, "Error reading decryption password.\n");
         return;
     }
-    printf("DEBUG. Entered: %s\n", decrypt_password);
 
     // Retrieve user's salt if a decryption password is provided
     if (strlen(decrypt_password) > 0) {
-        if (get_salt_by_username(db, username, salt) != 0) {
-            fprintf(stderr, "Failed to retrieve salt for user: %s\n", username);
-            free(source);
-            return;
-        }
-        if (!PKCS5_PBKDF2_HMAC(decrypt_password, strlen(decrypt_password), salt, SALT_SIZE, ITERATIONS, EVP_sha256(), KEY_SIZE, key)) {
-            fprintf(stderr, "Failed to derive decryption key.\n");
+        if (generate_key_from_password(db, user_id, decrypt_password, key) != 0) {
+            fprintf(stderr, "Failed to generate key from password.\n");
             free(source);
             return;
         }

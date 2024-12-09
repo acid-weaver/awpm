@@ -86,8 +86,8 @@ int get_user_id_by_username(sqlite3 *db, const char *username, int *user_id) {
     }
 }
 
-int get_salt_by_username(sqlite3 *db, const char *username, unsigned char *salt) {
-    const char *sql_query = "SELECT salt FROM users WHERE username = ?;";
+int get_salt_by_user_id(sqlite3 *db, const int user_id, unsigned char *salt) {
+    const char *sql_query = "SELECT salt FROM users WHERE id = ?;";
     sqlite3_stmt *stmt;
     int rc;
 
@@ -99,7 +99,8 @@ int get_salt_by_username(sqlite3 *db, const char *username, unsigned char *salt)
     }
 
     // Bind the username parameter
-    sqlite3_bind_text(stmt, 1, username, -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 1, user_id);
+
 
     // Execute the query and fetch the result
     rc = sqlite3_step(stmt);
@@ -118,7 +119,7 @@ int get_salt_by_username(sqlite3 *db, const char *username, unsigned char *salt)
         sqlite3_finalize(stmt);
         return 0; // Success
     } else if (rc == SQLITE_DONE) {
-        fprintf(stderr, "No user found with username: %s\n", username);
+        fprintf(stderr, "No user found with user_id: %d\n", user_id);
         sqlite3_finalize(stmt);
         return -1; // No user found
     } else {
