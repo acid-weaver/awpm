@@ -8,6 +8,7 @@
 #include <string.h>
 #include <signal.h>
 #include <sqlite3.h>
+#include <openssl/crypto.h>
 
 int DEBUG = 0;                  // Global DEBUG flag
 
@@ -21,15 +22,22 @@ int main(int argc, char *argv[]) {
 
     // Initialize debugging flag
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], CLI_DEBUG) == 0) {
+        if (strcmp(argv[i], CLI_DEBUG_MODE) == 0) {
             DEBUG = 1;
             printf("Debug mode enabled.\n");
         }
     }
 
+    // Initialize OpenSSL
+    // if (!OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CONFIG, NULL)) {
+    //     fprintf(stderr, "Failed to initialize OpenSSL.\n");
+    //     return -1;
+    // }
+
     if (argc < 2) {
-        fprintf(stderr, "Usage: wpassman %s | %s [%s]\n",
-                CLI_NEW, CLI_GET, CLI_DEBUG);
+        fprintf(stderr, "Usage: wpassman %s | %s | %s [%s]\n",
+                CLI_NEW_CREDENTIAL, CLI_GET_CREDENTIAL,
+                CLI_SET_MASTER_PSWD, CLI_DEBUG_MODE);
         return 1;
     }
 
@@ -47,10 +55,12 @@ int main(int argc, char *argv[]) {
 
     initialize_database(&db);
 
-    if (strcmp(argv[1], CLI_NEW) == 0) {
+    if (strcmp(argv[1], CLI_NEW_CREDENTIAL) == 0) {
         handle_add_new_entry(db, username);
-    } else if (strcmp(argv[1], CLI_GET) == 0) {
+    } else if (strcmp(argv[1], CLI_GET_CREDENTIAL) == 0) {
         handle_retrieve_creddata(db, username);
+    } else if (strcmp(argv[1], CLI_SET_MASTER_PSWD) == 0) {
+        handle_set_master_pswd(db, username);
     } else {
         fprintf(stderr, "Unknown parameter: %s\n", argv[1]);
     }

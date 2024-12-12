@@ -34,7 +34,7 @@ int add_credential(sqlite3 *db, cred_data_t credential_data, const unsigned char
     unsigned char *ciphertext     = NULL;
     size_t         ciphertext_len = 0;
 
-    if (encrypt_password(key, credential_data.pswd, credential_data.iv, &ciphertext, &ciphertext_len) != 0) {
+    if (encrypt_string(key, credential_data.pswd, credential_data.iv, &ciphertext, &ciphertext_len) != 0) {
         fprintf(stderr, "Failed to encrypt password.\n");
         return -1;
     }
@@ -42,7 +42,7 @@ int add_credential(sqlite3 *db, cred_data_t credential_data, const unsigned char
     if (DEBUG) {
         char *decrypted_data = NULL;
 
-        if (decrypt_password(key, ciphertext, ciphertext_len,
+        if (decrypt_string(key, ciphertext, ciphertext_len,
                              credential_data.iv, &decrypted_data) != 0) {
             fprintf(stderr, "Debug decyphrating failed!\n");
             return -1;
@@ -113,7 +113,7 @@ int retrieve_and_decipher_by_source(sqlite3 *db, const char *source, const unsig
 
         // Decrypt the password
         char *decrypted_password = NULL;
-        if (decrypt_password(key, encrypted_pswd, encrypted_len, iv, &decrypted_password) != 0) {
+        if (decrypt_string(key, encrypted_pswd, encrypted_len, iv, &decrypted_password) != 0) {
             fprintf(stderr, "Failed to decrypt password for login: %s\n", login);
             continue; // Skip this entry
         }

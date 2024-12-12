@@ -1,4 +1,5 @@
 #include "db/users.h"
+#include "memory.h"
 #include "utils.h"
 #include <sys/types.h>
 #include <pwd.h>
@@ -8,13 +9,16 @@
 #include <sqlite3.h>
 #include <openssl/rand.h>
 
-const char *get_current_username() {
+const char *
+get_current_username() {
     struct passwd *pw = getpwuid(getuid());
     return pw ? pw->pw_name : NULL;
 }
 
-int populate_user_from_row(sqlite3_stmt *stmt, user_t *user) {
-    if (!user) {
+int
+populate_user_from_row(sqlite3_stmt *stmt, user_t *user) {
+    if (user == NULL) {
+        fprintf(stderr, "Invalid input to populate_user_from_row function: Pointer to user_t were not provided.\n");
         return -1;
     }
 
@@ -25,7 +29,8 @@ int populate_user_from_row(sqlite3_stmt *stmt, user_t *user) {
     return 0;
 }
 
-int add_user(sqlite3 *db, const char *username) {
+int
+add_user(sqlite3 *db, const char *username) {
     unsigned char salt[SALT_SIZE];
     if (RAND_bytes(salt, sizeof(salt)) != 1) {
         fprintf(stderr, "Failed to generate salt.\n");
@@ -33,7 +38,7 @@ int add_user(sqlite3 *db, const char *username) {
     }
 
     const char *sql_insert =
-        "INSERT INTO users (username, salt) VALUES (?, ?);";
+        "INSERT INTO users (username, salt, master_iv, master_pswd) VALUES (?, ?, NULL, NULL);";
     sqlite3_stmt *stmt;
 
     int rc = sqlite3_prepare_v2(db, sql_insert, -1, &stmt, NULL);
@@ -54,7 +59,8 @@ int add_user(sqlite3 *db, const char *username) {
     return rc == SQLITE_DONE ? SQLITE_OK : rc;
 }
 
-int get_user_id_by_username(sqlite3 *db, const char *username, int *user_id) {
+int
+get_user_id_by_username(sqlite3 *db, const char *username, int *user_id) {
     const char *sql_query = "SELECT id FROM users WHERE username = ?;";
     sqlite3_stmt *stmt;
     int rc;
@@ -86,7 +92,8 @@ int get_user_id_by_username(sqlite3 *db, const char *username, int *user_id) {
     }
 }
 
-int get_salt_by_user_id(sqlite3 *db, const int user_id, unsigned char *salt) {
+int
+get_salt_by_user_id(sqlite3 *db, const int user_id, unsigned char *salt) {
     const char *sql_query = "SELECT salt FROM users WHERE id = ?;";
     sqlite3_stmt *stmt;
     int rc;
@@ -129,8 +136,35 @@ int get_salt_by_user_id(sqlite3 *db, const int user_id, unsigned char *salt) {
     }
 }
 
-// Function to print users for debugging
-void print_users(sqlite3 *db) {
+int
+write_master_pswd(sqlite3* db, const int user_id,
+                  const dynamic_string_t master_pswd, const unsigned char* master_iv) {
+    sqlite3_stmt *stmt;
+    const char *sql_update = "UPDATE users SET master_iv = ?, master_pswd = ? WHERE id = ?;";
+
+    int rc = sqlite3_prepare_v2(db, sql_update, -1, &stmt, NULL);
+
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare update statement: %s\n", sqlite3_errmsg(db));
+        return -1;
+    }
+
+    sqlite3_bind_blob(stmt, 1, master_iv, IV_SIZE, SQLITE_TRANSIENT);
+    sqlite3_bind_blob(stmt, 2, master_pswd.ptr, master_pswd.size, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 3, user_id);
+
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Failed to update master_pswd: %s\n", sqlite3_errmsg(db));
+    }
+
+    sqlite3_finalize(stmt);
+    return rc == SQLITE_DONE ? SQLITE_OK : rc;
+}
+
+// Function to print all users for debugging
+void
+print_users(sqlite3 *db) {
     const char *sql_select = "SELECT username, hex(salt) FROM users;";
     sqlite3_stmt *stmt;
 

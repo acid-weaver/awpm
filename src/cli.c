@@ -61,7 +61,6 @@ void handle_add_new_entry(struct sqlite3 *db, const char *username) {
         fprintf(stderr, "Error reading password.\n");
         return;
     }
-    credential_data.pswd.len = strlen(credential_data.pswd.ptr);
 
     // Prompt for optional mail
     if (std_input("associated e-mail", OPTIONAL_PROMPT, credential_data.email,
@@ -91,7 +90,7 @@ void handle_add_new_entry(struct sqlite3 *db, const char *username) {
 
 void handle_retrieve_creddata(struct sqlite3 *db, const char *username) {
     char *source = NULL;
-    char decrypt_password[INPUT_BUFF_SIZE];
+    char decrypt_password[INPUT_BUFF_SIZE], source_buffer[INPUT_BUFF_SIZE];
     unsigned char key[KEY_SIZE];
     char **results = NULL;
     int result_count = 0, user_id = -1;
@@ -103,7 +102,6 @@ void handle_retrieve_creddata(struct sqlite3 *db, const char *username) {
 
     // Prompt for source name
     printf("Enter source name to filter (optional, press Enter to skip): ");
-    char source_buffer[INPUT_BUFF_SIZE];
     if (fgets(source_buffer, INPUT_BUFF_SIZE, stdin) == NULL) {
         fprintf(stderr, "Error reading source.\n");
         return;
@@ -141,5 +139,60 @@ void handle_retrieve_creddata(struct sqlite3 *db, const char *username) {
 
     // Clean up
     free(source);
+}
+
+void
+handle_set_master_pswd(struct sqlite3 *db, const char *username) {
+    dynamic_string_t ciphertext = {
+        .ptr  = NULL,
+        .size = 0,
+    }, random_bytes = {
+        .ptr  = NULL,
+        .size = 0,
+    };
+    unsigned char key[KEY_SIZE], iv[IV_SIZE];
+    char master_pswd[INPUT_BUFF_SIZE], confirm_master_pswd[INPUT_BUFF_SIZE];
+    int user_id = -1;
+
+    if (get_user_id_by_username(db, username, &user_id) != 0) {
+        fprintf(stderr, "Failed to authenticate user.\n");
+        return;
+    }
+
+    random_bytes = dynamic_string_alloc(IV_SIZE);
+    if (dynamic_string_random_bytes(random_bytes) != 0) {
+        handle_errors("Failed to generate random data.");
+    }
+
+    if (secure_input("master password", "", master_pswd, INPUT_BUFF_SIZE) != 0) {
+        fprintf(stderr, "Error reading master password.\n");
+        return;
+    }
+
+    if (secure_input("master password", PSWD_CONFIRMATION,
+                     confirm_master_pswd, INPUT_BUFF_SIZE) != 0) {
+        fprintf(stderr, "Error reading confirmation of master password.\n");
+        return;
+    }
+
+    if (strcmp(master_pswd, confirm_master_pswd) != 0) {
+        fprintf(stderr, "Entered values for master password are different!\n");
+        return;
+    }
+
+    if (generate_key_from_password(db, user_id, master_pswd, key) != 0) {
+        fprintf(stderr, "Failed to generate key from master password.\n");
+        return;
+    }
+
+    if (encrypt_string(key, random_bytes, iv, (unsigned char **)&ciphertext.ptr,
+                       &ciphertext.size) != 0) {
+        handle_errors("Failed to encrypt master password.");
+    }
+
+    if (write_master_pswd(db, user_id, ciphertext, iv) != 0) {
+        fprintf(stderr, "Failed to write ciphrated master password to database.\n");
+        return;
+    }
 }
 

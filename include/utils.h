@@ -2,7 +2,7 @@
 #define UTILS_H
 
 // General constants
-#define INPUT_BUFF_SIZE 256
+#define INPUT_BUFF_SIZE 64
 #define MIN_PASSWORD_LENGTH 10
 #define MAX_PASSWORD_LENGTH 32
 
@@ -11,9 +11,9 @@
 #define KEY_SIZE 32
 #define IV_SIZE 16
 #define ITERATIONS 10000
-#define ENCRYPTION_SIZE (KEY_SIZE*16)
 
 #define OPTIONAL_PROMPT "(optional, hit Enter to skip)"
+#define PSWD_CONFIRMATION "(confirm previously entered value)"
 
 // Error messages
 #define ERR_USER_NOT_FOUND "User not found."

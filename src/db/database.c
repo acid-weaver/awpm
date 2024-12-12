@@ -7,7 +7,10 @@ int initialize_database(sqlite3 **db) {
         "CREATE TABLE IF NOT EXISTS users ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "username TEXT UNIQUE NOT NULL, "
-        "salt BLOB NOT NULL);";
+        "salt BLOB NOT NULL, "
+        "master_iv BLOB, "
+        "master_pswd BLOB"
+        ");";
 
     const char *sql_create_creddata_table =
         "CREATE TABLE IF NOT EXISTS creddata ("
@@ -18,7 +21,8 @@ int initialize_database(sqlite3 **db) {
         "iv BLOB NOT NULL, "
         "mail TEXT, "
         "owner INTEGER NOT NULL, "
-        "FOREIGN KEY(owner) REFERENCES users(id));";
+        "FOREIGN KEY(owner) REFERENCES users(id)"
+        ");";
 
     int rc = sqlite3_open("users.db", db);
     if (rc != SQLITE_OK) {
@@ -46,7 +50,8 @@ int initialize_database(sqlite3 **db) {
     return SQLITE_OK;
 }
 
-int user_exists(sqlite3 *db, const char *username) {
+int
+user_exists(sqlite3* db, const char* username) {
     const char *sql_query = "SELECT COUNT(*) FROM users WHERE username = ?;";
     sqlite3_stmt *stmt;
     int rc, count = 0;

@@ -1,5 +1,4 @@
 #include "encryption.h"
-// #include "memory.h"
 #include "memory.h"
 #include "utils.h"
 #include "users.h"
@@ -9,6 +8,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+int
+dynamic_string_random_bytes(dynamic_string_t dyn_str) {
+    if (dyn_str.ptr == NULL || dyn_str.size == 0) {
+        fprintf(stderr, "Invalid dynamic string: NULL pointer or zero size.\n");
+        return -1;
+    }
+
+    if (RAND_bytes((unsigned char *)dyn_str.ptr, dyn_str.size) != 1) {
+        handle_errors("Failed to generate random data");
+    }
+    return 0;
+}
 
 int
 generate_key_from_password(struct sqlite3 *db, const int user_id,
@@ -30,18 +42,19 @@ generate_key_from_password(struct sqlite3 *db, const int user_id,
     }
 
     if (!PKCS5_PBKDF2_HMAC(password, strlen(password), salt, SALT_SIZE,
-                       ITERATIONS, EVP_sha256(), KEY_SIZE, key)) {
-    handle_errors("Key derivation failed");
+                           ITERATIONS, EVP_sha256(), KEY_SIZE, key)) {
+        handle_errors("Key derivation failed");
     }
 
     return 0;
 }
 
 int
-encrypt_password(const unsigned char *key, dynamic_string_t plaintext,
-                 unsigned char *iv, unsigned char **ciphertext,
-                 size_t *ciphertext_len) {
+encrypt_string(const unsigned char *key, dynamic_string_t plaintext,
+               unsigned char *iv, unsigned char **ciphertext,
+               size_t *ciphertext_len) {
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    int plaintext_len = 0, len = 0;
 
     if (!ctx) {
         handle_errors("Failed to create encryption context");
@@ -64,8 +77,7 @@ encrypt_password(const unsigned char *key, dynamic_string_t plaintext,
     }
 
     // Prepare ciphertext buffer
-    int plaintext_len = strlen(plaintext.ptr);
-    int len = 0;
+    plaintext_len = strlen(plaintext.ptr);
     *ciphertext = malloc(plaintext_len + EVP_CIPHER_block_size(EVP_aes_256_cbc()));
     if (*ciphertext == NULL) {
         handle_errors("Memory allocation for ciphertext failed");
@@ -97,8 +109,10 @@ encrypt_password(const unsigned char *key, dynamic_string_t plaintext,
     return 0;
 }
 
-int decrypt_password(const unsigned char *key, const unsigned char *ciphertext, int ciphertext_len, const unsigned char *iv, char **plaintext) {
+int decrypt_string(const unsigned char *key, const unsigned char *ciphertext,
+                   int ciphertext_len, const unsigned char *iv, char **plaintext) {
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+    int plaintext_len = 0, len = 0;
 
     if (!ctx) {
         handle_errors("Failed to create decryption context");
@@ -117,7 +131,6 @@ int decrypt_password(const unsigned char *key, const unsigned char *ciphertext, 
         handle_errors("Failed to initialize AES decryption");
     }
 
-    int len = 0;
     *plaintext = malloc(ciphertext_len + 1);
     if (!*plaintext) {
         handle_errors("Memory allocation for plaintext failed");
@@ -126,7 +139,7 @@ int decrypt_password(const unsigned char *key, const unsigned char *ciphertext, 
     if (EVP_DecryptUpdate(ctx, (unsigned char *)*plaintext, &len, ciphertext, ciphertext_len) != 1) {
         handle_errors("Failed during AES decryption update");
     }
-    int plaintext_len = len;
+    plaintext_len = len;
 
     if (EVP_DecryptFinal_ex(ctx, (unsigned char *)*plaintext + len, &len) != 1) {
         printf("Cannot decipher encrypted data with provided password!");

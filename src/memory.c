@@ -34,7 +34,6 @@ dynamic_string_t
 dynamic_string_alloc(size_t size) {
     dynamic_string_t dyn_str = {
         .size = 0,
-        .len  = 0,
         .ptr  = NULL};
 
     dyn_str.ptr = safe_malloc(size);
@@ -43,12 +42,11 @@ dynamic_string_alloc(size_t size) {
 }
 
 void
-dynamic_string_clear(dynamic_string_t *dyn_str) {
+dynamic_string_free(dynamic_string_t *dyn_str) {
     if (dyn_str) {    // For ptr NULL check in safe_free
         safe_free(dyn_str->ptr, dyn_str->size);
         dyn_str->ptr  = NULL;
         dyn_str->size = 0;
-        dyn_str->len  = 0;
     }
 }
 
@@ -59,12 +57,11 @@ dynamic_string_copy(dynamic_string_t *src, dynamic_string_t *cpy) {
         return -1;
     }
 
-    dynamic_string_clear(cpy);
+    dynamic_string_free(cpy);
     *cpy = dynamic_string_alloc(src->size);
 
     memcpy(cpy->ptr, src->ptr, src->size);
     cpy->size = src->size;
-    cpy->len  = src->len;
 
     return 0;
 }
@@ -78,11 +75,11 @@ dynamic_string_print(const dynamic_string_t *dyn_str) {
 
     printf("Dynamic String:\n");
     printf("  Allocated Size: %zu bytes\n", dyn_str->size);
-    printf("  Content Length: %zu bytes\n", dyn_str->len);
+    printf("  Content Length: %zu bytes\n", strlen(dyn_str->ptr));
 
     // Check if the string is printable
     int is_printable = 1;
-    for (size_t i = 0; i < dyn_str->len; i++) {
+    for (size_t i = 0; i < strlen(dyn_str->ptr); i++) {
         if (!isprint((unsigned char)dyn_str->ptr[i])) {
             is_printable = 0;
             break;
@@ -90,10 +87,10 @@ dynamic_string_print(const dynamic_string_t *dyn_str) {
     }
 
     if (is_printable) {
-        printf("  Contents (String): %.*s\n", (int)dyn_str->len, dyn_str->ptr);
+        printf("  Contents (String): %.*s\n", (int)strlen(dyn_str->ptr), dyn_str->ptr);
     } else {
         printf("  Contents (Hex): ");
-        for (size_t i = 0; i < dyn_str->len; i++) {
+        for (size_t i = 0; i < strlen(dyn_str->ptr); i++) {
             printf("%02x", (unsigned char)dyn_str->ptr[i]);
         }
         printf("\n");
