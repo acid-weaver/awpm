@@ -7,7 +7,7 @@ struct sqlite3;
 #include <openssl/evp.h>
 
 
-int binary_array_random(binary_array_t bin_arr);
+int binary_array_random(binary_array_t* bin_arr);
 int generate_key_from_password(struct sqlite3 *db, const int user_id,
                                const char *password, unsigned char *key);
 int encrypt_string(const unsigned char *key, unsigned char *iv,

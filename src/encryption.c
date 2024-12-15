@@ -9,15 +9,17 @@
 
 
 int
-binary_array_random(binary_array_t bin_arr) {
-    if (bin_arr.ptr == NULL || bin_arr.size == 0) {
+binary_array_random(binary_array_t* bin_arr) {
+    if (bin_arr->ptr == NULL || bin_arr->size == 0) {
         fprintf(stderr, "Invalid dynamic string: NULL pointer or zero size.\n");
         return -1;
     }
 
-    if (RAND_bytes(bin_arr.ptr, bin_arr.size) != 1) {
+    if (RAND_bytes(bin_arr->ptr, bin_arr->size) != 1) {
         handle_errors("Failed to generate random data");
     }
+
+    bin_arr->len = bin_arr->size;
     return 0;
 }
 
@@ -58,6 +60,17 @@ encrypt_string(const unsigned char* key, unsigned char* iv,
         handle_errors("Failed to create encryption context");
     }
 
+    if (DEBUG) {
+        printf("DEBUG encript_string entered with:\n\tKEY (hex): ");
+        for (int i = 0; i < KEY_SIZE; i++) printf("%02x", key[i]);
+        printf("\n\tIV (Hex): ");
+        for (size_t i = 0; i < IV_SIZE; i++) printf("%02x", iv[i]);
+        printf("\n\tplaintext:\n");
+        binary_array_print(&plaintext);
+        printf("\n\tciphertext:\n");
+        binary_array_print(ciphertext);
+    }
+
     if (key == NULL || iv == NULL || plaintext.ptr == NULL ||
         plaintext.size == 0 || plaintext.len == 0 || ciphertext == NULL) {
         fprintf(stderr, "Input parameters to encryption function are invalid.\n");
@@ -80,15 +93,6 @@ encrypt_string(const unsigned char* key, unsigned char* iv,
                                      EVP_CIPHER_block_size(EVP_aes_256_cbc()));
     if (ciphertext->ptr == NULL) {
         handle_errors("Memory allocation for ciphertext failed");
-    }
-
-    if (DEBUG) {
-        printf("DEBUG encrypt_password data BEFORE ENCRYPTION:\n\tKey (Hex): ");
-        for (int i = 0; i < KEY_SIZE; i++) printf("%02x", key[i]);
-        printf("\n");
-        printf("\tIV (Hex): ");
-        for (size_t i = 0; i < IV_SIZE; i++) printf("%02x", iv[i]);
-        printf("\n");
     }
 
     // Encrypt the plaintext

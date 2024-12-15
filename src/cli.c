@@ -23,6 +23,7 @@ void handle_add_new_entry(struct sqlite3 *db, const char *username) {
         .iv = "",
         .pswd = {
             .size = 0,
+            .len  = 0,
             .ptr  = NULL,
         },
     };
@@ -167,7 +168,7 @@ handle_set_master_pswd(struct sqlite3 *db, const char *username) {
     }
 
     random_bytes = binary_array_alloc(IV_SIZE);
-    if (binary_array_random(random_bytes) != 0) {
+    if (binary_array_random(&random_bytes) != 0) {
         handle_errors("Failed to generate random data.");
     }
 

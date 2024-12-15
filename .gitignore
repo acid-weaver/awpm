@@ -1,4 +1,5 @@
 pm
+.meta
 compile_commands.json
 
 *.db
