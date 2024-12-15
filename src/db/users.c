@@ -138,7 +138,7 @@ get_salt_by_user_id(sqlite3 *db, const int user_id, unsigned char *salt) {
 
 int
 write_master_pswd(sqlite3* db, const int user_id,
-                  const dynamic_string_t master_pswd, const unsigned char* master_iv) {
+                  const binary_array_t master_pswd, const unsigned char* master_iv) {
     sqlite3_stmt *stmt;
     const char *sql_update = "UPDATE users SET master_iv = ?, master_pswd = ? WHERE id = ?;";
 
@@ -150,7 +150,7 @@ write_master_pswd(sqlite3* db, const int user_id,
     }
 
     sqlite3_bind_blob(stmt, 1, master_iv, IV_SIZE, SQLITE_TRANSIENT);
-    sqlite3_bind_blob(stmt, 2, master_pswd.ptr, master_pswd.size, SQLITE_TRANSIENT);
+    sqlite3_bind_blob(stmt, 2, master_pswd.ptr, master_pswd.len, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 3, user_id);
 
     rc = sqlite3_step(stmt);

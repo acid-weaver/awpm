@@ -17,7 +17,7 @@ int add_user(sqlite3* db, const char* username);
 int get_user_id_by_username(sqlite3* db, const char* username, int* user_id);
 int get_salt_by_user_id(sqlite3* db, const int user_id, unsigned char* salt);
 int write_master_pswd(sqlite3* db, const int user_id,
-                      const dynamic_string_t master_pswd, const unsigned char* master_iv);
+                      const binary_array_t master_pswd, const unsigned char* master_iv);
 
 #endif // USERS_H
 

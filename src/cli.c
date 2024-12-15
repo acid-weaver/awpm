@@ -22,8 +22,8 @@ void handle_add_new_entry(struct sqlite3 *db, const char *username) {
         .email = "",
         .iv = "",
         .pswd = {
-            .ptr  = NULL,
             .size = 0,
+            .ptr  = NULL,
         },
     };
     unsigned char key[KEY_SIZE];
@@ -55,11 +55,16 @@ void handle_add_new_entry(struct sqlite3 *db, const char *username) {
     }
 
     // Prompt for password
-    credential_data.pswd = dynamic_string_alloc(INPUT_BUFF_SIZE);
-    if (secure_input("password to store", "", credential_data.pswd.ptr,
+    credential_data.pswd = binary_array_alloc(INPUT_BUFF_SIZE);
+    if (secure_input("password to store", "", (char *)credential_data.pswd.ptr,
                      credential_data.pswd.size) != 0) {
         fprintf(stderr, "Error reading password.\n");
         return;
+    }
+    credential_data.pswd.len = strlen((char *)credential_data.pswd.ptr);
+
+    if (DEBUG) {
+        printf("DEBUG. You entered: %s", (char *)credential_data.pswd.ptr);
     }
 
     // Prompt for optional mail
@@ -143,12 +148,14 @@ void handle_retrieve_creddata(struct sqlite3 *db, const char *username) {
 
 void
 handle_set_master_pswd(struct sqlite3 *db, const char *username) {
-    dynamic_string_t ciphertext = {
-        .ptr  = NULL,
+    binary_array_t random_bytes = {
         .size = 0,
-    }, random_bytes = {
+        .len  = 0,
         .ptr  = NULL,
+    }, ciphertext = {
         .size = 0,
+        .len  = 0,
+        .ptr  = NULL,
     };
     unsigned char key[KEY_SIZE], iv[IV_SIZE];
     char master_pswd[INPUT_BUFF_SIZE], confirm_master_pswd[INPUT_BUFF_SIZE];
@@ -159,8 +166,8 @@ handle_set_master_pswd(struct sqlite3 *db, const char *username) {
         return;
     }
 
-    random_bytes = dynamic_string_alloc(IV_SIZE);
-    if (dynamic_string_random_bytes(random_bytes) != 0) {
+    random_bytes = binary_array_alloc(IV_SIZE);
+    if (binary_array_random(random_bytes) != 0) {
         handle_errors("Failed to generate random data.");
     }
 
@@ -185,8 +192,7 @@ handle_set_master_pswd(struct sqlite3 *db, const char *username) {
         return;
     }
 
-    if (encrypt_string(key, random_bytes, iv, (unsigned char **)&ciphertext.ptr,
-                       &ciphertext.size) != 0) {
+    if (encrypt_string(key, iv, random_bytes, &ciphertext) != 0) {
         handle_errors("Failed to encrypt master password.");
     }
 

@@ -4,19 +4,18 @@
 #include "users.h"
 #include <openssl/rand.h>
 #include <openssl/evp.h>
-// #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 
 int
-dynamic_string_random_bytes(dynamic_string_t dyn_str) {
-    if (dyn_str.ptr == NULL || dyn_str.size == 0) {
+binary_array_random(binary_array_t bin_arr) {
+    if (bin_arr.ptr == NULL || bin_arr.size == 0) {
         fprintf(stderr, "Invalid dynamic string: NULL pointer or zero size.\n");
         return -1;
     }
 
-    if (RAND_bytes((unsigned char *)dyn_str.ptr, dyn_str.size) != 1) {
+    if (RAND_bytes(bin_arr.ptr, bin_arr.size) != 1) {
         handle_errors("Failed to generate random data");
     }
     return 0;
@@ -50,24 +49,24 @@ generate_key_from_password(struct sqlite3 *db, const int user_id,
 }
 
 int
-encrypt_string(const unsigned char *key, dynamic_string_t plaintext,
-               unsigned char *iv, unsigned char **ciphertext,
-               size_t *ciphertext_len) {
-    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-    int plaintext_len = 0, len = 0;
+encrypt_string(const unsigned char* key, unsigned char* iv,
+               binary_array_t plaintext, binary_array_t* ciphertext) {
+    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+    int len = 0;
 
-    if (!ctx) {
+    if (ctx == NULL) {
         handle_errors("Failed to create encryption context");
     }
 
-    if (key == NULL || iv == NULL || plaintext.ptr == NULL || plaintext.size == 0 ||
-        ciphertext == NULL || ciphertext_len == NULL) {
+    if (key == NULL || iv == NULL || plaintext.ptr == NULL ||
+        plaintext.size == 0 || plaintext.len == 0 || ciphertext == NULL) {
         fprintf(stderr, "Input parameters to encryption function are invalid.\n");
+        EVP_CIPHER_CTX_free(ctx);
         return -1;
     }
 
     // Generate random IV
-    if (!RAND_bytes(iv, IV_SIZE)) {
+    if (RAND_bytes(iv, IV_SIZE) != 1) {
         handle_errors("Failed to generate IV");
     }
 
@@ -77,9 +76,9 @@ encrypt_string(const unsigned char *key, dynamic_string_t plaintext,
     }
 
     // Prepare ciphertext buffer
-    plaintext_len = strlen(plaintext.ptr);
-    *ciphertext = malloc(plaintext_len + EVP_CIPHER_block_size(EVP_aes_256_cbc()));
-    if (*ciphertext == NULL) {
+    *ciphertext = binary_array_alloc(plaintext.len +
+                                     EVP_CIPHER_block_size(EVP_aes_256_cbc()));
+    if (ciphertext->ptr == NULL) {
         handle_errors("Memory allocation for ciphertext failed");
     }
 
@@ -93,16 +92,16 @@ encrypt_string(const unsigned char *key, dynamic_string_t plaintext,
     }
 
     // Encrypt the plaintext
-    if (EVP_EncryptUpdate(ctx, *ciphertext, &len, (unsigned char *)plaintext.ptr, plaintext_len) != 1) {
+    if (EVP_EncryptUpdate(ctx, ciphertext->ptr, &len, plaintext.ptr, plaintext.len) != 1) {
         handle_errors("Failed during AES encryption update");
     }
-    *ciphertext_len = len;
+    ciphertext->len = len;
 
     // Finalize encryption
-    if (EVP_EncryptFinal_ex(ctx, *ciphertext + len, &len) != 1) {
+    if (EVP_EncryptFinal_ex(ctx, ciphertext->ptr + len, &len) != 1) {
         handle_errors("Failed during AES encryption final step");
     }
-    *ciphertext_len += len;
+    ciphertext->len += len;
 
     // Cleanup
     EVP_CIPHER_CTX_free(ctx);

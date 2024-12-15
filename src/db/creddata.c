@@ -27,14 +27,18 @@ print_credential_data(cred_data_t *credential_data) {
     printf("\n");
 
     printf("  Encrypted Password:\n");
-    dynamic_string_print(&credential_data->pswd);
+    binary_array_print(&credential_data->pswd);
 }
 
 int add_credential(sqlite3 *db, cred_data_t credential_data, const unsigned char *key) {
-    unsigned char *ciphertext     = NULL;
-    size_t         ciphertext_len = 0;
+    binary_array_t ciphertext = {
+        .size = 0,
+        .len  = 0,
+        .ptr  = NULL,
+    };
 
-    if (encrypt_string(key, credential_data.pswd, credential_data.iv, &ciphertext, &ciphertext_len) != 0) {
+    if (encrypt_string(key, credential_data.iv, credential_data.pswd,
+                       &ciphertext) != 0) {
         fprintf(stderr, "Failed to encrypt password.\n");
         return -1;
     }
@@ -42,7 +46,7 @@ int add_credential(sqlite3 *db, cred_data_t credential_data, const unsigned char
     if (DEBUG) {
         char *decrypted_data = NULL;
 
-        if (decrypt_string(key, ciphertext, ciphertext_len,
+        if (decrypt_string(key, ciphertext.ptr, ciphertext.len,
                              credential_data.iv, &decrypted_data) != 0) {
             fprintf(stderr, "Debug decyphrating failed!\n");
             return -1;
@@ -62,8 +66,8 @@ int add_credential(sqlite3 *db, cred_data_t credential_data, const unsigned char
 
     sqlite3_bind_text(stmt, 1, credential_data.source, -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 2, credential_data.login, -1, SQLITE_STATIC);
-    sqlite3_bind_blob(stmt, 3, ciphertext,
-                      ciphertext_len, SQLITE_STATIC);
+    sqlite3_bind_blob(stmt, 3, ciphertext.ptr,
+                      ciphertext.len, SQLITE_STATIC);
     sqlite3_bind_blob(stmt, 4, credential_data.iv, IV_SIZE, SQLITE_STATIC);
     sqlite3_bind_text(stmt, 5, credential_data.email, -1, SQLITE_STATIC);
     sqlite3_bind_int(stmt, 6, credential_data.owner);

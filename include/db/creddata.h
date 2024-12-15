@@ -12,7 +12,7 @@ typedef struct {
     char login[INPUT_BUFF_SIZE];
     char email[INPUT_BUFF_SIZE];
     unsigned char iv[IV_SIZE];
-    dynamic_string_t pswd;
+    binary_array_t pswd;
 } cred_data_t;
 
 void print_credential_data(cred_data_t *credential_data);
