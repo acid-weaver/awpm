@@ -1,8 +1,7 @@
 #include "cli.h"
-// #include "memory.h"
-#include "encryption.h"
 #include "memory.h"
 #include "utils.h"
+#include "encryption.h"
 #include "db/database.h"
 #include "db/users.h"
 #include "db/creddata.h"
@@ -10,10 +9,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <openssl/evp.h>
 
 
-void handle_add_new_entry(struct sqlite3 *db, const char *username) {
+void
+handle_add_new_entry(struct sqlite3* db, const char* username) {
     cred_data_t credential_data = {
         .id = -1,
         .owner = -1,
@@ -31,7 +32,7 @@ void handle_add_new_entry(struct sqlite3 *db, const char *username) {
     char encrypt_password[INPUT_BUFF_SIZE];
 
     // Add user if not already present
-    if (!user_exists(db, username)) {
+    if (user_exists(db, username) == 0) {
         printf("User '%s' not found. Adding to database...\n", username);
         if (add_user(db, username) != SQLITE_OK) {
             fprintf(stderr, "Failed to add user '%s'.\n", username);
@@ -94,7 +95,8 @@ void handle_add_new_entry(struct sqlite3 *db, const char *username) {
 }
 
 
-void handle_retrieve_creddata(struct sqlite3 *db, const char *username) {
+void
+handle_retrieve_creddata(struct sqlite3* db, const char* username) {
     char *source = NULL;
     char decrypt_password[INPUT_BUFF_SIZE], source_buffer[INPUT_BUFF_SIZE];
     unsigned char key[KEY_SIZE];
@@ -148,7 +150,7 @@ void handle_retrieve_creddata(struct sqlite3 *db, const char *username) {
 }
 
 void
-handle_set_master_pswd(struct sqlite3 *db, const char *username) {
+handle_set_master_pswd(struct sqlite3* db, const char* username) {
     binary_array_t random_bytes = {
         .size = 0,
         .len  = 0,

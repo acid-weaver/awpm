@@ -15,9 +15,9 @@ typedef struct {
     binary_array_t pswd;
 } cred_data_t;
 
-void print_credential_data(cred_data_t *credential_data);
-int add_credential(sqlite3 *db, cred_data_t credential_data, const unsigned char *key);
-int retrieve_and_decipher_by_source(sqlite3 *db, const char *source, const unsigned char *key, char ***results, int *result_count);
+void print_credential_data(cred_data_t* credential_data);
+int add_credential(sqlite3* db, cred_data_t credential_data, const unsigned char* key);
+int retrieve_and_decipher_by_source(sqlite3* db, const char* source, const unsigned char* key, char*** results, int* result_count);
 
 #endif // CREDDATA_H
 

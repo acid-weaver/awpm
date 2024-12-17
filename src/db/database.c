@@ -69,6 +69,6 @@ user_exists(sqlite3* db, const char* username) {
     }
     sqlite3_finalize(stmt);
 
-    return count > 0 ? 1 : 0;
+    return count;
 }
 

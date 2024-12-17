@@ -24,12 +24,12 @@ extern int DEBUG;                   // Global DEBUG flag
 
 #include <stdlib.h>
 
-void handle_errors(const char *msg);
+void handle_errors(const char* msg);
 void handle_interrupt(int sig);
-int std_input(const char *input_name, const char *description,
-			  char *result, size_t result_size);
-int secure_input(const char *input_name, const char *description,
-				 char *result, size_t result_size);
+int std_input(const char* input_name, const char* description,
+			  char* result, size_t result_size);
+int secure_input(const char* input_name, const char* description,
+				 char* result, size_t result_size);
 
 
 #endif // UTILS_H
