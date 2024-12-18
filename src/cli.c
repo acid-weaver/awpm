@@ -2,7 +2,6 @@
 #include "memory.h"
 #include "utils.h"
 #include "encryption.h"
-#include "db/database.h"
 #include "db/users.h"
 #include "db/creddata.h"
 
@@ -14,7 +13,7 @@
 
 
 void
-handle_add_new_entry(struct sqlite3* db, const char* username) {
+handle_add_new_entry(struct sqlite3* db, user_t* user) {
     cred_data_t credential_data = {
         .id = -1,
         .owner = -1,
@@ -32,18 +31,8 @@ handle_add_new_entry(struct sqlite3* db, const char* username) {
     char encrypt_password[INPUT_BUFF_SIZE];
 
     // Add user if not already present
-    if (user_exists(db, username) == 0) {
-        printf("User '%s' not found. Adding to database...\n", username);
-        if (add_user(db, username) != SQLITE_OK) {
-            fprintf(stderr, "Failed to add user '%s'.\n", username);
-            return;
-        }
-        printf("User '%s' added successfully.\n", username);
-    }
-
-    if (get_user_id_by_username(db, username, &credential_data.owner) != 0) {
-        fprintf(stderr, "Failed to retrieve owner ID for username: %s\n", username);
-        return;
+    if (get_or_add_user(db, user) != 0) {
+        fprintf(stderr, "Unexpected error while executing get_or_add_user.\n");
     }
 
     if (std_input("Source", "", credential_data.source, INPUT_BUFF_SIZE) != 0) {
@@ -66,7 +55,7 @@ handle_add_new_entry(struct sqlite3* db, const char* username) {
     credential_data.pswd.len = strlen((char *)credential_data.pswd.ptr);
 
     if (DEBUG) {
-        printf("DEBUG. You entered: %s", (char *)credential_data.pswd.ptr);
+        printf("DEBUG. You entered: %s\n", (char *)credential_data.pswd.ptr);
     }
 
     // Prompt for optional mail
@@ -78,10 +67,11 @@ handle_add_new_entry(struct sqlite3* db, const char* username) {
     // Prompt for encryption password
     if (secure_input("encryption password", "", encrypt_password,
                      sizeof(encrypt_password)) != 0) {
+        handle_errors("Failed to read encryption password.");
         return;
     }
 
-    if (generate_key_from_password(db, credential_data.owner, encrypt_password, key) != 0) {
+    if (generate_key_from_password(user->salt, encrypt_password, key) != 0) {
         fprintf(stderr, "Failed to generate key from password.\n");
         return;
     }
@@ -96,15 +86,19 @@ handle_add_new_entry(struct sqlite3* db, const char* username) {
 
 
 void
-handle_retrieve_creddata(struct sqlite3* db, const char* username) {
+handle_retrieve_creddata(struct sqlite3* db, user_t* user) {
     char *source = NULL;
     char decrypt_password[INPUT_BUFF_SIZE], source_buffer[INPUT_BUFF_SIZE];
     unsigned char key[KEY_SIZE];
     char **results = NULL;
-    int result_count = 0, user_id = -1;
+    int result_count = 0, status_code = 0;
 
-    if (get_user_id_by_username(db, username, &user_id) != 0) {
-        fprintf(stderr, "Failed to authenticate user.\n");
+    status_code = get_user(db, user);
+    if (status_code == 1) {
+        fprintf(stderr, "Current user NOT registered in database, there is NO stored passwords for %s.\n", user->username);
+        return;
+    } else if (status_code != 0) {
+        fprintf(stderr, "Unexpected error while executing get_user.\n");
         return;
     }
 
@@ -126,7 +120,7 @@ handle_retrieve_creddata(struct sqlite3* db, const char* username) {
 
     // Retrieve user's salt if a decryption password is provided
     if (strlen(decrypt_password) > 0) {
-        if (generate_key_from_password(db, user_id, decrypt_password, key) != 0) {
+        if (generate_key_from_password(user->salt, decrypt_password, key) != 0) {
             fprintf(stderr, "Failed to generate key from password.\n");
             free(source);
             return;
@@ -150,56 +144,21 @@ handle_retrieve_creddata(struct sqlite3* db, const char* username) {
 }
 
 void
-handle_set_master_pswd(struct sqlite3* db, const char* username) {
-    binary_array_t random_bytes = {
-        .size = 0,
-        .len  = 0,
-        .ptr  = NULL,
-    }, ciphertext = {
-        .size = 0,
-        .len  = 0,
-        .ptr  = NULL,
-    };
-    unsigned char key[KEY_SIZE], iv[IV_SIZE];
-    char master_pswd[INPUT_BUFF_SIZE], confirm_master_pswd[INPUT_BUFF_SIZE];
-    int user_id = -1;
+handle_set_master_pswd(struct sqlite3* db, user_t* user) {
+    int status_code = 0;
 
-    if (get_user_id_by_username(db, username, &user_id) != 0) {
+    status_code = get_user(db, user);
+    if (status_code != 0) {
         fprintf(stderr, "Failed to authenticate user.\n");
         return;
     }
 
-    random_bytes = binary_array_alloc(IV_SIZE);
-    if (binary_array_random(&random_bytes) != 0) {
-        handle_errors("Failed to generate random data.");
-    }
-
-    if (secure_input("master password", "", master_pswd, INPUT_BUFF_SIZE) != 0) {
-        fprintf(stderr, "Error reading master password.\n");
+    if (user_set_master_pswd(user) != 0) {
+        fprintf(stderr, "Failed to prepare new master password. Try again.\n");
         return;
     }
 
-    if (secure_input("master password", PSWD_CONFIRMATION,
-                     confirm_master_pswd, INPUT_BUFF_SIZE) != 0) {
-        fprintf(stderr, "Error reading confirmation of master password.\n");
-        return;
-    }
-
-    if (strcmp(master_pswd, confirm_master_pswd) != 0) {
-        fprintf(stderr, "Entered values for master password are different!\n");
-        return;
-    }
-
-    if (generate_key_from_password(db, user_id, master_pswd, key) != 0) {
-        fprintf(stderr, "Failed to generate key from master password.\n");
-        return;
-    }
-
-    if (encrypt_string(key, iv, random_bytes, &ciphertext) != 0) {
-        handle_errors("Failed to encrypt master password.");
-    }
-
-    if (write_master_pswd(db, user_id, ciphertext, iv) != 0) {
+    if (write_master_pswd(db, user->id, user->master_pswd, user->master_iv) != 0) {
         fprintf(stderr, "Failed to write ciphrated master password to database.\n");
         return;
     }

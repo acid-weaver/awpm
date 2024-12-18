@@ -1,7 +1,6 @@
 #include "encryption.h"
 #include "memory.h"
 #include "utils.h"
-#include "users.h"
 #include <openssl/rand.h>
 #include <openssl/evp.h>
 #include <stdlib.h>
@@ -24,15 +23,8 @@ binary_array_random(binary_array_t* bin_arr) {
 }
 
 int
-generate_key_from_password(struct sqlite3 *db, const int user_id,
-                           const char *password, unsigned char *key) {
-    unsigned char salt[SALT_SIZE];
-
-    if (get_salt_by_user_id(db, user_id, salt) != 0) {
-        fprintf(stderr, "Failed to retrieve salt for user: %d\n", user_id);
-        return -1;
-    }
-
+generate_key_from_password(const unsigned char* salt, const char *password,
+                           unsigned char *key) {
     if (DEBUG) {
         printf("DEBUG generate_key_from_password\n");
         printf("\tSalt (Hex): ");

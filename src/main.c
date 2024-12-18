@@ -13,9 +13,9 @@
 int DEBUG = 0;                  // Global DEBUG flag
 
 
-int main(int argc, char *argv[]) {
-    sqlite3 *db = NULL;
-    const char *username = get_current_username();
+int main(int argc, char* argv[]) {
+    user_t user = {0};
+    sqlite3* db = NULL;
 
     signal(SIGINT, handle_interrupt); // Handle Ctrl-C
     signal(SIGTERM, handle_interrupt); // Handle kill signals
@@ -28,27 +28,22 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // Initialize OpenSSL
-    // if (!OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CONFIG, NULL)) {
-    //     fprintf(stderr, "Failed to initialize OpenSSL.\n");
-    //     return -1;
-    // }
-
     if (argc < 2) {
-        fprintf(stderr, "Usage: wpassman %s | %s | %s [%s]\n",
+        fprintf(stderr, "Usage: pm %s | %s | %s [%s]\n",
                 CLI_NEW_CREDENTIAL, CLI_GET_CREDENTIAL,
                 CLI_SET_MASTER_PSWD, CLI_DEBUG_MODE);
         return 1;
     }
 
-    if (!username) {
-        fprintf(stderr, "Error: Unable to determine username.\n");
+    user = user_init();
+    if (strlen(user.username) == 0) {
+        handle_errors("Unauthorized access impossible.\n");
         return 1;
     }
 
-    printf("Current user %s.\n", username);
+    printf("Greetings, %s!\n", user.username);
 
-    if (sqlite3_open("users.db", &db) != SQLITE_OK) {
+    if (sqlite3_open("awpm.db", &db) != SQLITE_OK) {
         fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
         return 1;
     }
@@ -56,11 +51,11 @@ int main(int argc, char *argv[]) {
     initialize_database(&db);
 
     if (strcmp(argv[1], CLI_NEW_CREDENTIAL) == 0) {
-        handle_add_new_entry(db, username);
+        handle_add_new_entry(db, &user);
     } else if (strcmp(argv[1], CLI_GET_CREDENTIAL) == 0) {
-        handle_retrieve_creddata(db, username);
+        handle_retrieve_creddata(db, &user);
     } else if (strcmp(argv[1], CLI_SET_MASTER_PSWD) == 0) {
-        handle_set_master_pswd(db, username);
+        handle_set_master_pswd(db, &user);
     } else {
         fprintf(stderr, "Unknown parameter: %s\n", argv[1]);
     }
