@@ -27,6 +27,7 @@ void                dynamic_string_print(const dynamic_string_t* dyn_str);
 binary_array_t      binary_array_alloc(size_t size);
 void                binary_array_free(binary_array_t* bin_arr);
 int                 binary_array_copy(binary_array_t* dst, binary_array_t* src);
+char*               binary_array_to_string(const binary_array_t* bin_arr);
 void                binary_array_print(const binary_array_t* bin_arr);
 
 #endif                      // MEMORY_H

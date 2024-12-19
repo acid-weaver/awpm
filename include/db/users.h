@@ -16,6 +16,7 @@ typedef struct {
 const char* get_current_username();
 user_t user_init();
 int user_set_master_pswd(user_t* user);
+int user_verify_master_pswd(const user_t user, const unsigned char* key);
 int populate_user_from_row(sqlite3_stmt* stmt, user_t* user);
 
 int add_user(sqlite3* db, user_t* user);

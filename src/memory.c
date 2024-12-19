@@ -139,6 +139,47 @@ binary_array_copy(binary_array_t* dst, binary_array_t *src) {
     return 0;
 }
 
+char*
+binary_array_to_string(const binary_array_t *bin_arr) {
+    static const char empty_string[] = ""; // Reusable empty string
+    char* hex_string = NULL;
+    size_t hex_len = 0;
+    int is_printable = 1;
+
+    // Validate input
+    if (bin_arr == NULL || bin_arr->ptr == NULL || bin_arr->len == 0) {
+        fprintf(stderr, "Empty or NO binary_array_t provided.\n");
+        return (char *)empty_string;
+    }
+
+    // Check if the content is printable (assumes it's a null-terminated string)
+    for (size_t i = 0; i < bin_arr->len; i++) {
+        if (isprint(bin_arr->ptr[i]) == 0) {
+            is_printable = 0;
+            break;
+        }
+    }
+
+    if (is_printable) {
+        // Return the original string if it's fully printable
+        return (char *)bin_arr->ptr;
+    }
+
+    // Otherwise, convert to hexadecimal representation
+    hex_len = bin_arr->len * 2 + 1; // 2 chars per byte + null terminator
+    hex_string = malloc(hex_len);
+    if (hex_string == NULL) {
+        fprintf(stderr, "Memory allocation failed for hex string.\n");
+        return (char *)empty_string;
+    }
+
+    for (size_t i = 0; i < bin_arr->len; i++) {
+        snprintf(&hex_string[i * 2], 3, "%02x", bin_arr->ptr[i]);
+    }
+
+    return hex_string;
+}
+
 void
 binary_array_print(const binary_array_t *bin_arr) {
     if (bin_arr == NULL || bin_arr->ptr == NULL) {

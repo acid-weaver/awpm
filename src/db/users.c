@@ -59,6 +59,11 @@ user_set_master_pswd(user_t* user) {
         handle_errors("Failed to generate random data.");
     }
 
+    if (DEBUG) {
+        printf("Generated random data to verify master password:\n");
+        binary_array_print(&random_bytes);
+    }
+
     if (secure_input("master password", "", master_pswd, INPUT_BUFF_SIZE) != 0) {
         fprintf(stderr, "Error reading master password.\n");
         return -1;
@@ -82,6 +87,29 @@ user_set_master_pswd(user_t* user) {
 
     if (encrypt_string(key, user->master_iv, random_bytes, &user->master_pswd) != 0) {
         handle_errors("Failed to encrypt master password.");
+    }
+
+    return 0;
+}
+
+int
+user_verify_master_pswd(const user_t user, const unsigned char* key) {
+    binary_array_t random_bytes = {
+        .size = 0,
+        .len  = 0,
+        .ptr  = NULL,
+    };
+
+    if (decrypt_string(key, user.master_iv, user.master_pswd, &random_bytes) != 0) {
+        fprintf(stderr, "Failed to verify your master password, ensure you entered right value.\n");
+        return 1;
+    } else {
+        printf("Master password successfully verified!\n");
+    }
+
+    if (DEBUG) {
+        printf("At verifying master pswd decrypted random bytes are:\n");
+        binary_array_print(&random_bytes);
     }
 
     return 0;

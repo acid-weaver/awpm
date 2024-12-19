@@ -44,7 +44,7 @@ generate_key_from_password(const unsigned char* salt, const char *password,
 
 int
 encrypt_string(const unsigned char* key, unsigned char* iv,
-               binary_array_t plaintext, binary_array_t* ciphertext) {
+               const binary_array_t plaintext, binary_array_t* ciphertext) {
     EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
     int len = 0;
 
@@ -104,10 +104,11 @@ encrypt_string(const unsigned char* key, unsigned char* iv,
     return 0;
 }
 
-int decrypt_string(const unsigned char *key, const unsigned char *ciphertext,
-                   int ciphertext_len, const unsigned char *iv, char **plaintext) {
+int
+decrypt_string(const unsigned char *key, const unsigned char *iv,
+               const binary_array_t ciphertext, binary_array_t* plaintext) {
     EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-    int plaintext_len = 0, len = 0;
+    int len = 0;
 
     if (!ctx) {
         handle_errors("Failed to create decryption context");
@@ -126,23 +127,23 @@ int decrypt_string(const unsigned char *key, const unsigned char *ciphertext,
         handle_errors("Failed to initialize AES decryption");
     }
 
-    *plaintext = malloc(ciphertext_len + 1);
-    if (!*plaintext) {
+    *plaintext = binary_array_alloc(ciphertext.len + 1);
+    if (plaintext == NULL) {
         handle_errors("Memory allocation for plaintext failed");
     }
 
-    if (EVP_DecryptUpdate(ctx, (unsigned char *)*plaintext, &len, ciphertext, ciphertext_len) != 1) {
+    if (EVP_DecryptUpdate(ctx, plaintext->ptr, &len, ciphertext.ptr, ciphertext.len) != 1) {
         handle_errors("Failed during AES decryption update");
     }
-    plaintext_len = len;
+    plaintext->len = len;
 
-    if (EVP_DecryptFinal_ex(ctx, (unsigned char *)*plaintext + len, &len) != 1) {
-        printf("Cannot decipher encrypted data with provided password!");
-        handle_errors("Failed during AES decryption final step");
+    if (EVP_DecryptFinal_ex(ctx, plaintext->ptr + len, &len) != 1) {
+        fprintf(stderr, "Failed during AES decryption final step.\n");
+        return 1;
     }
-    plaintext_len += len;
+    plaintext->len += len;
 
-    (*plaintext)[plaintext_len] = '\0'; // Null-terminate the string
+    (plaintext->ptr)[plaintext->len] = '\0'; // Null-terminate the string
 
     EVP_CIPHER_CTX_free(ctx);
     return 0;

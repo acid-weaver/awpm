@@ -44,14 +44,18 @@ int add_credential(sqlite3 *db, cred_data_t credential_data, const unsigned char
     }
 
     if (DEBUG) {
-        char *decrypted_data = NULL;
+        binary_array_t decrypted_data = {
+            .size = 0,
+            .len  = 0,
+            .ptr  = NULL,
+        };
 
-        if (decrypt_string(key, ciphertext.ptr, ciphertext.len,
-                             credential_data.iv, &decrypted_data) != 0) {
+        if (decrypt_string(key, credential_data.iv, ciphertext, &decrypted_data) != 0) {
             fprintf(stderr, "Debug decyphrating failed!\n");
             return -1;
         }
-        printf("DEBUG. Decrypted after encryption data: %s\n", decrypted_data);
+        printf("DEBUG. Decrypted after encryption data:\n");
+        binary_array_print(&decrypted_data);
     }
 
     const char *sql_insert =
@@ -101,10 +105,18 @@ int retrieve_and_decipher_by_source(sqlite3 *db, const char *source, const unsig
     int temp_count = 0;
 
     while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        binary_array_t decrypted_pswd = {
+            .size = 0,
+            .len  = 0,
+            .ptr  = NULL,
+        };
         const char *source = (const char *)sqlite3_column_text(stmt, 0);
         const char *login = (const char *)sqlite3_column_text(stmt, 1);
-        const unsigned char *encrypted_pswd = sqlite3_column_blob(stmt, 2);
-        int encrypted_len = sqlite3_column_bytes(stmt, 2);
+        const binary_array_t encrypted_pswd = {
+            .size = sqlite3_column_bytes(stmt, 2),
+            .len  = sqlite3_column_bytes(stmt, 2),
+            .ptr  = (unsigned char*)sqlite3_column_blob(stmt, 2),
+        };
         const unsigned char *iv = sqlite3_column_blob(stmt, 3);
         int iv_len = sqlite3_column_bytes(stmt, 3);
         const char *mail = (const char *)sqlite3_column_text(stmt, 4);
@@ -116,30 +128,30 @@ int retrieve_and_decipher_by_source(sqlite3 *db, const char *source, const unsig
         }
 
         // Decrypt the password
-        char *decrypted_password = NULL;
-        if (decrypt_string(key, encrypted_pswd, encrypted_len, iv, &decrypted_password) != 0) {
+        if (decrypt_string(key, iv, encrypted_pswd, &decrypted_pswd) != 0) {
             fprintf(stderr, "Failed to decrypt password for login: %s\n", login);
             continue; // Skip this entry
         }
 
         // Combine all data into a single formatted string
-        size_t result_len = strlen(source) + strlen(login) + strlen(mail) + strlen(decrypted_password) + 50;
+        size_t result_len = strlen(source) + strlen(login) + strlen(mail) +
+                            (decrypted_pswd.len * 2) + 50;
         char *result_string = malloc(result_len);
-        if (!result_string) {
+        if (result_string == NULL) {
             fprintf(stderr, "Memory allocation failed.\n");
-            free(decrypted_password);
+            binary_array_free(&decrypted_pswd);
             continue; // Skip this entry
         }
 
         snprintf(result_string, result_len, "Source: %s, Login: %s, Password: %s, Email: %s",
-                 source, login, decrypted_password, mail);
+                 source, login, binary_array_to_string(&decrypted_pswd), mail);
 
         // Add the result to the list
         temp_results = realloc(temp_results, (temp_count + 1) * sizeof(char *));
         if (!temp_results) {
             fprintf(stderr, "Memory allocation failed.\n");
             free(result_string);
-            free(decrypted_password);
+            binary_array_free(&decrypted_pswd);
             continue; // Skip this entry
         }
 
@@ -147,7 +159,7 @@ int retrieve_and_decipher_by_source(sqlite3 *db, const char *source, const unsig
         temp_count++;
 
         // Clean up decrypted password
-        free(decrypted_password);
+        binary_array_free(&decrypted_pswd);
     }
 
     if (rc != SQLITE_DONE) {

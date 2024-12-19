@@ -24,7 +24,7 @@ int initialize_database(sqlite3 **db) {
         "FOREIGN KEY(owner) REFERENCES users(id)"
         ");";
 
-    int rc = sqlite3_open("users.db", db);
+    int rc = sqlite3_open("awpm.db", db);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(*db));
         return rc;

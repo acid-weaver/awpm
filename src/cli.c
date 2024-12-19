@@ -76,6 +76,11 @@ handle_add_new_entry(struct sqlite3* db, user_t* user) {
         return;
     }
 
+    if (user_verify_master_pswd(*user, key) != 0) {
+        fprintf(stderr, "Invalid master password, repeat.\n");
+        return;
+    }
+
     // Add credential
     if (add_credential(db, credential_data, key) == 0) {
         printf("Credential added successfully.\n");
