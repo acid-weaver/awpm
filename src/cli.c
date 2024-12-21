@@ -13,7 +13,7 @@
 
 
 void
-handle_add_new_entry(struct sqlite3* db, user_t* user) {
+handle_add_new_entry(struct sqlite3* db, struct config cfg, user_t* user) {
     cred_data_t credential_data = {
         .id = -1,
         .owner = -1,
@@ -26,22 +26,45 @@ handle_add_new_entry(struct sqlite3* db, user_t* user) {
             .len  = 0,
             .ptr  = NULL,
         },
-    };
+    }, *results = NULL;
     unsigned char key[KEY_SIZE];
     char encrypt_password[INPUT_BUFF_SIZE];
+    int result_count = 0, update = 0;
 
     // Add user if not already present
     if (get_or_add_user(db, user) != 0) {
         fprintf(stderr, "Unexpected error while executing get_or_add_user.\n");
+        return;
     }
+    credential_data.owner = user->id;
 
     if (std_input("Source", "", credential_data.source, INPUT_BUFF_SIZE) != 0) {
         fprintf(stderr, "Error at Source input.\n");
         return;
     }
 
-    if (std_input("Login", OPTIONAL_PROMPT, credential_data.login, INPUT_BUFF_SIZE) != 0) {
+    if (cfg.multiple_accs_per_source == 0 && get_credentials_by_source(db, *user,
+        credential_data.source, &results, &result_count) != 0) {
+        fprintf(stderr, "Failed to check databse for entries with provided source.\n");
+        return;
+
+    } else if (result_count == 1) {
+        printf("Founded entry for this source. This row would be updated due to 'one per source' mode is enabled.\n");
+        credential_data = results[0];
+        update = 1;
+
+    } else if (result_count > 1){
+        printf("This source is in multiple account mode. New entry will be added.\n");
+    }
+
+    if (update == 0 && std_input("Login", OPTIONAL_PROMPT, credential_data.login, INPUT_BUFF_SIZE) != 0) {
         fprintf(stderr, "Error at Login input.\n");
+        return;
+    }
+
+    if (update == 0 && std_input("associated e-mail", OPTIONAL_PROMPT, credential_data.email,
+                  sizeof(credential_data.email)) != 0) {
+        fprintf(stderr, "Error reading e-mail.\n");
         return;
     }
 
@@ -54,18 +77,8 @@ handle_add_new_entry(struct sqlite3* db, user_t* user) {
     }
     credential_data.pswd.len = strlen((char *)credential_data.pswd.ptr);
 
-    if (DEBUG) {
-        printf("DEBUG. You entered: %s\n", (char *)credential_data.pswd.ptr);
-    }
-
-    // Prompt for optional mail
-    if (std_input("associated e-mail", OPTIONAL_PROMPT, credential_data.email,
-                  sizeof(credential_data.email)) != 0) {
-        fprintf(stderr, "Error reading e-mail.\n");
-    }
-
     // Prompt for encryption password
-    if (secure_input("encryption password", "", encrypt_password,
+    if (secure_input("master password", "", encrypt_password,
                      sizeof(encrypt_password)) != 0) {
         handle_errors("Failed to read encryption password.");
         return;
@@ -81,21 +94,26 @@ handle_add_new_entry(struct sqlite3* db, user_t* user) {
         return;
     }
 
+    if (encrypt_string(key, credential_data.iv, credential_data.pswd,
+                       &credential_data.pswd) != 0) {
+        fprintf(stderr, "Failed to encrypt credential data.\n");
+        return;
+    }
+
     // Add credential
-    if (add_credential(db, credential_data, key) == 0) {
+    if (upsert_cred_data(db, &credential_data) == 0) {
         printf("Credential added successfully.\n");
     } else {
-        fprintf(stderr, "Failed to add credential.\n");
+        fprintf(stderr, "Failed to upsert credential.\n");
     }
 }
 
 
 void
-handle_retrieve_creddata(struct sqlite3* db, user_t* user) {
-    char *source = NULL;
-    char decrypt_password[INPUT_BUFF_SIZE], source_buffer[INPUT_BUFF_SIZE];
+handle_retrieve_creddata(struct sqlite3* db, struct config cfg, user_t* user) {
+    cred_data_t* results = NULL;
+    char source[INPUT_BUFF_SIZE], master_password[INPUT_BUFF_SIZE];
     unsigned char key[KEY_SIZE];
-    char **results = NULL;
     int result_count = 0, status_code = 0;
 
     status_code = get_user(db, user);
@@ -107,49 +125,79 @@ handle_retrieve_creddata(struct sqlite3* db, user_t* user) {
         return;
     }
 
+    if (cfg.debug) {
+        printf("DEBUG. user id is: %d\n", user->id);
+    }
+
     // Prompt for source name
-    printf("Enter source name to filter (optional, press Enter to skip): ");
-    if (fgets(source_buffer, INPUT_BUFF_SIZE, stdin) == NULL) {
+    if (std_input("source", "", source, INPUT_BUFF_SIZE) != 0) {
         fprintf(stderr, "Error reading source.\n");
         return;
     }
-    source_buffer[strcspn(source_buffer, "\n")] = '\0'; // Remove newline
-    source = strlen(source_buffer) > 0 ? strdup(source_buffer) : NULL;
 
     // Prompt for decryption password
-    if (secure_input("decryption password", OPTIONAL_PROMPT, decrypt_password,
+    if (secure_input("master password", "", master_password,
                      INPUT_BUFF_SIZE) != 0) {
         fprintf(stderr, "Error reading decryption password.\n");
         return;
     }
 
-    // Retrieve user's salt if a decryption password is provided
-    if (strlen(decrypt_password) > 0) {
-        if (generate_key_from_password(user->salt, decrypt_password, key) != 0) {
-            fprintf(stderr, "Failed to generate key from password.\n");
-            free(source);
-            return;
-        }
+    if (strlen(master_password) < 1) {
+        fprintf(stderr, "Entered password length less that minimum.\n");
+        return;
     }
 
+    if (generate_key_from_password(user->salt, master_password, key) != 0) {
+        fprintf(stderr, "Failed to generate key from password.\n");
+        return;
+    }
+
+    if (user_verify_master_pswd(*user, key) != 0) {
+        fprintf(stderr, "Failed to verify master password.\n");
+        return;
+    }
+
+    if (get_credentials_by_source(db, *user, source, &results, &result_count) != 0) {
+        fprintf(stderr, "Failed to retrieve credential data.\n");
+        return;
+    }
+
+    if (result_count == 0) {
+        printf("No results found.\n");
+
+    } else if (result_count == 1) {
+        // Only one account per source!
+        printf("Credential found.\n");
+        if (decrypt_string(key, results[0].iv, results[0].pswd, &results[0].pswd) != 0) {
+            fprintf(stderr, "Failed to decrypt password.\n");
+        }
+        printf("%s", cred_data_to_string(&results[0]));
+
+    } else if (cfg.multiple_accs_per_source == 0) { // result_count > 1 here
+        printf("Multiple credentials for this source in 'one per source' mode.\n");
+        printf("Change config and run program again or choose credential to delete.\n");
+
+    } else if (cfg.multiple_accs_per_source > 0) {  // result_count > 1 here
+        // Handle multiple accounts
+        printf("Multiple accounts in multiple mode.\n");
+    }
+
+    // char** results_str;
     // Retrieve and display data
-    if (retrieve_and_decipher_by_source(db, source, key, &results, &result_count) == 0) {
-        printf("Retrieved %d entries:\n", result_count);
-        for (int i = 0; i < result_count; i++) {
-            printf("%s\n", results[i]);
-            free(results[i]); // Free each result string
-        }
-        free(results); // Free the results array
-    } else {
-        fprintf(stderr, "Failed to retrieve data.\n");
-    }
-
-    // Clean up
-    free(source);
+    // if (retrieve_and_decipher_by_source(db, source, key, &results_str, &result_count) == 0) {
+    //     printf("Retrieved %d entries:\n", result_count);
+    //     for (int i = 0; i < result_count; i++) {
+    //         printf("%s\n", results_str[i]);
+    //         free(results_str[i]); // Free each result string
+    //     }
+    //     free(results_str); // Free the results array
+    // } else {
+    //     fprintf(stderr, "Failed to retrieve data.\n");
+    // }
 }
 
 void
-handle_set_master_pswd(struct sqlite3* db, user_t* user) {
+handle_set_master_pswd(struct sqlite3* db, struct config cfg, user_t* user) {
     int status_code = 0;
 
     status_code = get_user(db, user);

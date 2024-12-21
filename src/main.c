@@ -10,10 +10,13 @@
 #include <sqlite3.h>
 #include <openssl/crypto.h>
 
-int DEBUG = 0;                  // Global DEBUG flag
-
 
 int main(int argc, char* argv[]) {
+    struct config cfg = {
+        .debug = 0,
+        .multiple_accs_per_source = 0,
+        .db_path = "awpm.db",
+    };
     user_t user = {0};
     sqlite3* db = NULL;
 
@@ -23,7 +26,7 @@ int main(int argc, char* argv[]) {
     // Initialize debugging flag
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], CLI_DEBUG_MODE) == 0) {
-            DEBUG = 1;
+            cfg.debug = 1;
             printf("Debug mode enabled.\n");
         }
     }
@@ -43,19 +46,14 @@ int main(int argc, char* argv[]) {
 
     printf("Greetings, %s!\n", user.username);
 
-    if (sqlite3_open("awpm.db", &db) != SQLITE_OK) {
-        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
-        return 1;
-    }
-
-    initialize_database(&db);
+    initialize_database(&db, cfg);
 
     if (strcmp(argv[1], CLI_NEW_CREDENTIAL) == 0) {
-        handle_add_new_entry(db, &user);
+        handle_add_new_entry(db, cfg, &user);
     } else if (strcmp(argv[1], CLI_GET_CREDENTIAL) == 0) {
-        handle_retrieve_creddata(db, &user);
+        handle_retrieve_creddata(db, cfg, &user);
     } else if (strcmp(argv[1], CLI_SET_MASTER_PSWD) == 0) {
-        handle_set_master_pswd(db, &user);
+        handle_set_master_pswd(db, cfg, &user);
     } else {
         fprintf(stderr, "Unknown parameter: %s\n", argv[1]);
     }

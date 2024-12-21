@@ -25,13 +25,9 @@ binary_array_random(binary_array_t* bin_arr) {
 int
 generate_key_from_password(const unsigned char* salt, const char *password,
                            unsigned char *key) {
-    if (DEBUG) {
-        printf("DEBUG generate_key_from_password\n");
-        printf("\tSalt (Hex): ");
-        for (int i = 0; i < SALT_SIZE; i++) {
-            printf("%02x", salt[i]);
-        }
-        printf("\n");
+    if (salt == NULL || password == NULL || strlen(password) == 0) {
+        fprintf(stderr, "Incorrect input parameters to generate_key_from_password.\n");
+        return -1;
     }
 
     if (!PKCS5_PBKDF2_HMAC(password, strlen(password), salt, SALT_SIZE,
@@ -50,17 +46,6 @@ encrypt_string(const unsigned char* key, unsigned char* iv,
 
     if (ctx == NULL) {
         handle_errors("Failed to create encryption context");
-    }
-
-    if (DEBUG) {
-        printf("DEBUG encript_string entered with:\n\tKEY (hex): ");
-        for (int i = 0; i < KEY_SIZE; i++) printf("%02x", key[i]);
-        printf("\n\tIV (Hex): ");
-        for (size_t i = 0; i < IV_SIZE; i++) printf("%02x", iv[i]);
-        printf("\n\tplaintext:\n");
-        binary_array_print(&plaintext);
-        printf("\n\tciphertext:\n");
-        binary_array_print(ciphertext);
     }
 
     if (key == NULL || iv == NULL || plaintext.ptr == NULL ||
@@ -112,15 +97,6 @@ decrypt_string(const unsigned char *key, const unsigned char *iv,
 
     if (!ctx) {
         handle_errors("Failed to create decryption context");
-    }
-
-    if (DEBUG) {
-        printf("DEBUG decrypt_password data BEFORE DECRYPTION:\n\tKey (Hex): ");
-        for (int i = 0; i < KEY_SIZE; i++) printf("%02x", key[i]);
-        printf("\n");
-        printf("\tIV (Hex): ");
-        for (size_t i = 0; i < IV_SIZE; i++) printf("%02x", iv[i]);
-        printf("\n");
     }
 
     if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv) != 1) {

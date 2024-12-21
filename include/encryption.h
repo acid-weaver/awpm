@@ -3,7 +3,6 @@
 
 #include "memory.h"
 
-
 int binary_array_random(binary_array_t* bin_arr);
 int generate_key_from_password(const unsigned char* salt, const char* password,
                                unsigned char* key);

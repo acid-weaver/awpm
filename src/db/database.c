@@ -2,14 +2,14 @@
 #include <sqlite3.h>
 #include <stdio.h>
 
-int initialize_database(sqlite3 **db) {
+int initialize_database(sqlite3 **db, struct config cfg) {
     const char *sql_create_users_table =
         "CREATE TABLE IF NOT EXISTS users ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "username TEXT UNIQUE NOT NULL, "
         "salt BLOB NOT NULL, "
-        "master_iv BLOB, "
-        "master_pswd BLOB"
+        "master_iv BLOB NOT NULL, "
+        "master_pswd BLOB NOT NULL"
         ");";
 
     const char *sql_create_creddata_table =
@@ -17,14 +17,14 @@ int initialize_database(sqlite3 **db) {
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "source TEXT NOT NULL, "
         "login TEXT NOT NULL, "
-        "pswd BLOB NOT NULL, "
+        "email TEXT, "
         "iv BLOB NOT NULL, "
-        "mail TEXT, "
+        "pswd BLOB NOT NULL, "
         "owner INTEGER NOT NULL, "
         "FOREIGN KEY(owner) REFERENCES users(id)"
         ");";
 
-    int rc = sqlite3_open("awpm.db", db);
+    int rc = sqlite3_open(cfg.db_path, db);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(*db));
         return rc;

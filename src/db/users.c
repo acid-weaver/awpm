@@ -59,11 +59,6 @@ user_set_master_pswd(user_t* user) {
         handle_errors("Failed to generate random data.");
     }
 
-    if (DEBUG) {
-        printf("Generated random data to verify master password:\n");
-        binary_array_print(&random_bytes);
-    }
-
     if (secure_input("master password", "", master_pswd, INPUT_BUFF_SIZE) != 0) {
         fprintf(stderr, "Error reading master password.\n");
         return -1;
@@ -105,11 +100,6 @@ user_verify_master_pswd(const user_t user, const unsigned char* key) {
         return 1;
     } else {
         printf("Master password successfully verified!\n");
-    }
-
-    if (DEBUG) {
-        printf("At verifying master pswd decrypted random bytes are:\n");
-        binary_array_print(&random_bytes);
     }
 
     return 0;
@@ -154,11 +144,8 @@ populate_user_from_row(sqlite3_stmt* stmt, user_t* user) {
     buffer_size = sqlite3_column_bytes(stmt, 3);
     if (buffer != NULL && buffer_size == IV_SIZE) {
         memcpy(user->master_iv, buffer, IV_SIZE);
-    } else if (buffer == NULL) {
-        // Allow `master_iv` to be NULL, indicating NO master password set
-        memset(user->master_iv, 0, IV_SIZE);
     } else {
-        fprintf(stderr, "Invalid IV size for user: %s\n", user->username);
+        fprintf(stderr, "Invalid or missing master IV for user: %s\n", user->username);
         return -1;
     }
 
@@ -169,11 +156,8 @@ populate_user_from_row(sqlite3_stmt* stmt, user_t* user) {
         user->master_pswd = binary_array_alloc(buffer_size);
         memcpy(user->master_pswd.ptr, buffer, buffer_size);
         user->master_pswd.len = buffer_size;
-    } else if (buffer == NULL) {
-        // Allow `master_pswd` to be NULL, indicating NO master password set
-        user->master_pswd = binary_array_alloc(0);
     } else {
-        fprintf(stderr, "Invalid master password size for user: %s\n", user->username);
+        fprintf(stderr, "Invalid or missing master password for user: %s\n", user->username);
         return -1;
     }
 
@@ -287,10 +271,6 @@ get_or_add_user(sqlite3* db, user_t* user) {
         if (add_user(db, user) != 0) {
             fprintf(stderr, "Failed to add new user with username: %s.\n", user->username);
             return -1;
-        }
-
-        if (get_user(db, user) != 0) {
-            handle_errors("Failed to retrieve recently added user.\n");
         }
 
         return 0;
