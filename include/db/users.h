@@ -1,3 +1,29 @@
+/**
+ * \file            users.h
+ * \brief           User management utilities
+ * \author          Acid Weaver
+ * \date            2024-12-23
+ * \details
+ * Declares functions and data structures for managing users, including
+ * creating, querying, and verifying user records.
+ */
+
+/* Copyright (C) 2024  Acid Weaver acid.weaver@gmail.com
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #ifndef USERS_H
 #define USERS_H
 
