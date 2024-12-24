@@ -24,12 +24,12 @@
  */
 
 #include "utils.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #include <termios.h>
-
+#include <unistd.h>
 
 void handle_errors(const char *msg) {
     perror(msg);
@@ -41,7 +41,8 @@ void handle_interrupt(int sig) {
     exit(0);
 }
 
-int std_input(const char *input_name, const char *description, char *result, size_t result_size) {
+int std_input(const char *input_name, const char *description, char *result,
+              size_t result_size) {
     if (!result || result_size == 0) {
         fprintf(stderr, "Invalid buffer provided for %s input.\n", input_name);
         return -1;
@@ -58,11 +59,12 @@ int std_input(const char *input_name, const char *description, char *result, siz
         return -1;
     }
 
-    result[strcspn(result, "\n")] = '\0'; // Remove newline
+    result[strcspn(result, "\n")] = '\0';  // Remove newline
     return 0;
 }
 
-int secure_input(const char *input_name, const char *description, char *result, size_t result_size) {
+int secure_input(const char *input_name, const char *description, char *result,
+                 size_t result_size) {
     int status_code = 0;
     struct termios oldt, newt;
 
@@ -90,4 +92,3 @@ int secure_input(const char *input_name, const char *description, char *result, 
     printf("\n");
     return status_code;
 }
-

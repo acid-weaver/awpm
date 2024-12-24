@@ -24,18 +24,16 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "utils.h"
+#include <openssl/crypto.h>
+#include <signal.h>
+#include <sqlite3.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "cli.h"
 #include "db/database.h"
 #include "db/users.h"
-// #include "db/creddata.h"
-
-#include <stdio.h>
-#include <string.h>
-#include <signal.h>
-#include <sqlite3.h>
-#include <openssl/crypto.h>
-
+#include "utils.h"
 
 int main(int argc, char* argv[]) {
     struct config cfg = {
@@ -46,25 +44,41 @@ int main(int argc, char* argv[]) {
     user_t user = {0};
     sqlite3* db = NULL;
 
-    signal(SIGINT, handle_interrupt); // Handle Ctrl-C
-    signal(SIGTERM, handle_interrupt); // Handle kill signals
-
-    // Initialize debugging flag
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], CLI_DEBUG_MODE) == 0) {
-            cfg.debug = 1;
-            printf("Debug mode enabled.\n");
-        }
-    }
+    signal(SIGINT, handle_interrupt);   // Handle Ctrl-C
+    signal(SIGTERM, handle_interrupt);  // Handle kill signals
 
     if (argc < 2) {
-        fprintf(stderr, "Usage: pm %s | %s | %s [%s]\n",
-                CLI_NEW_CREDENTIAL, CLI_GET_CREDENTIAL,
-                CLI_SET_MASTER_PSWD, CLI_DEBUG_MODE);
+        fprintf(stderr, "Usage: pm %s | %s | %s | %s [%s]\n", CLI_NEW,
+                CLI_FORCE_NEW, CLI_GET, CLI_SET_MASTER_PSWD, CLI_DEBUG_MODE);
         return 1;
     }
 
     user = user_init();
+    for (int i = 1; i < argc; i++) {
+        printf("Parameter %s.\n", argv[i]);
+        if (strcmp(argv[i], CLI_DEBUG_MODE) == 0) {
+            cfg.debug = 1;
+            printf("Debug mode enabled.\n");
+        }
+
+        if (strcmp(argv[i], CLI_USER) == 0) {
+            if (cfg.debug) {
+                printf("Going to parse user.\n");
+                printf("%s\n", argv[i + 1]);
+            }
+            if (i + 1 <= argc) {
+                strncpy(user.username, argv[i + 1], sizeof(user.username) - 1);
+                user.username[sizeof(user.username) - 1] = '\0';
+                i++;
+            } else {
+                fprintf(stderr,
+                        "Wrong %s parameter usage: it requires assign value!\n",
+                        CLI_USER);
+                return 1;
+            }
+        }
+    }
+
     if (strlen(user.username) == 0) {
         handle_errors("Unauthorized access impossible.\n");
         return 1;
@@ -74,12 +88,15 @@ int main(int argc, char* argv[]) {
 
     initialize_database(&db, cfg);
 
-    if (strcmp(argv[1], CLI_NEW_CREDENTIAL) == 0) {
+    if (strcmp(argv[1], CLI_NEW) == 0) {
         handle_add_new_entry(db, cfg, &user);
-    } else if (strcmp(argv[1], CLI_GET_CREDENTIAL) == 0) {
+    } else if (strcmp(argv[1], CLI_GET) == 0) {
         handle_retrieve_creddata(db, cfg, &user);
     } else if (strcmp(argv[1], CLI_SET_MASTER_PSWD) == 0) {
         handle_set_master_pswd(db, cfg, &user);
+    } else if (strcmp(argv[1], CLI_FORCE_NEW) == 0) {
+        cfg.multiple_accs_per_source = 1;
+        handle_add_new_entry(db, cfg, &user);
     } else {
         fprintf(stderr, "Unknown parameter: %s\n", argv[1]);
     }
@@ -87,4 +104,3 @@ int main(int argc, char* argv[]) {
     sqlite3_close(db);
     return 0;
 }
-

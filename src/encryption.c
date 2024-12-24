@@ -24,16 +24,16 @@
  */
 
 #include "encryption.h"
-#include "memory.h"
-#include "utils.h"
-#include <openssl/rand.h>
+
 #include <openssl/evp.h>
+#include <openssl/rand.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "memory.h"
+#include "utils.h"
 
-int
-binary_array_random(binary_array_t* bin_arr) {
+int binary_array_random(binary_array_t* bin_arr) {
     if (bin_arr->ptr == NULL || bin_arr->size == 0) {
         fprintf(stderr, "Invalid dynamic string: NULL pointer or zero size.\n");
         return -1;
@@ -47,11 +47,11 @@ binary_array_random(binary_array_t* bin_arr) {
     return 0;
 }
 
-int
-generate_key_from_password(const unsigned char* salt, const char *password,
-                           unsigned char *key) {
+int generate_key_from_password(const unsigned char* salt, const char* password,
+                               unsigned char* key) {
     if (salt == NULL || password == NULL || strlen(password) == 0) {
-        fprintf(stderr, "Incorrect input parameters to generate_key_from_password.\n");
+        fprintf(stderr,
+                "Incorrect input parameters to generate_key_from_password.\n");
         return -1;
     }
 
@@ -63,9 +63,8 @@ generate_key_from_password(const unsigned char* salt, const char *password,
     return 0;
 }
 
-int
-encrypt_string(const unsigned char* key, unsigned char* iv,
-               const binary_array_t plaintext, binary_array_t* ciphertext) {
+int encrypt_string(const unsigned char* key, unsigned char* iv,
+                   const binary_array_t plaintext, binary_array_t* ciphertext) {
     EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
     int len = 0;
 
@@ -75,7 +74,8 @@ encrypt_string(const unsigned char* key, unsigned char* iv,
 
     if (key == NULL || iv == NULL || plaintext.ptr == NULL ||
         plaintext.size == 0 || plaintext.len == 0 || ciphertext == NULL) {
-        fprintf(stderr, "Input parameters to encryption function are invalid.\n");
+        fprintf(stderr,
+                "Input parameters to encryption function are invalid.\n");
         EVP_CIPHER_CTX_free(ctx);
         return -1;
     }
@@ -98,7 +98,8 @@ encrypt_string(const unsigned char* key, unsigned char* iv,
     }
 
     // Encrypt the plaintext
-    if (EVP_EncryptUpdate(ctx, ciphertext->ptr, &len, plaintext.ptr, plaintext.len) != 1) {
+    if (EVP_EncryptUpdate(ctx, ciphertext->ptr, &len, plaintext.ptr,
+                          plaintext.len) != 1) {
         handle_errors("Failed during AES encryption update");
     }
     ciphertext->len = len;
@@ -114,10 +115,9 @@ encrypt_string(const unsigned char* key, unsigned char* iv,
     return 0;
 }
 
-int
-decrypt_string(const unsigned char *key, const unsigned char *iv,
-               const binary_array_t ciphertext, binary_array_t* plaintext) {
-    EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+int decrypt_string(const unsigned char* key, const unsigned char* iv,
+                   const binary_array_t ciphertext, binary_array_t* plaintext) {
+    EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
     int len = 0;
 
     if (!ctx) {
@@ -133,7 +133,8 @@ decrypt_string(const unsigned char *key, const unsigned char *iv,
         handle_errors("Memory allocation for plaintext failed");
     }
 
-    if (EVP_DecryptUpdate(ctx, plaintext->ptr, &len, ciphertext.ptr, ciphertext.len) != 1) {
+    if (EVP_DecryptUpdate(ctx, plaintext->ptr, &len, ciphertext.ptr,
+                          ciphertext.len) != 1) {
         handle_errors("Failed during AES decryption update");
     }
     plaintext->len = len;
@@ -144,9 +145,8 @@ decrypt_string(const unsigned char *key, const unsigned char *iv,
     }
     plaintext->len += len;
 
-    (plaintext->ptr)[plaintext->len] = '\0'; // Null-terminate the string
+    (plaintext->ptr)[plaintext->len] = '\0';  // Null-terminate the string
 
     EVP_CIPHER_CTX_free(ctx);
     return 0;
 }
-

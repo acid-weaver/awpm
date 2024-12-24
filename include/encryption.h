@@ -37,5 +37,4 @@ int encrypt_string(const unsigned char* key, unsigned char* iv,
 int decrypt_string(const unsigned char* key, const unsigned char* iv,
                    const binary_array_t ciphertext, binary_array_t* plaintext);
 
-#endif // ENCRYPTION_H
-
+#endif  // ENCRYPTION_H

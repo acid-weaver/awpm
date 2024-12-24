@@ -27,10 +27,11 @@
 #ifndef CREDDATA_H
 #define CREDDATA_H
 
+#include <sqlite3.h>
+
+#include "db/users.h"
 #include "memory.h"
 #include "utils.h"
-#include "db/users.h"
-#include <sqlite3.h>
 
 typedef struct {
     int id;
@@ -42,14 +43,13 @@ typedef struct {
     binary_array_t pswd;
 } cred_data_t;
 
-int populate_cred_data_from_row(sqlite3_stmt* stmt, cred_data_t* credential_data);
+int cred_data_populate(sqlite3_stmt* stmt, cred_data_t* credential_data);
 char* cred_data_to_string(const cred_data_t* credential_data);
-int upsert_cred_data(sqlite3* db, const cred_data_t* credential_data);
-int get_credentials_by_source(sqlite3* db, const user_t user, const char* source,
-                              cred_data_t** results, int* result_count);
+int cred_data_upsert(sqlite3* db, const cred_data_t* credential_data);
+int cred_data_get_by_source(sqlite3* db, const user_t user, const char* source,
+                            cred_data_t** results, int* result_count);
 int retrieve_and_decipher_by_source(sqlite3* db, const char* source,
                                     const unsigned char* key, char*** results,
                                     int* result_count);
 
-#endif // CREDDATA_H
-
+#endif  // CREDDATA_H

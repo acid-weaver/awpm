@@ -24,6 +24,7 @@
  */
 
 #include "db/database.h"
+
 #include <sqlite3.h>
 #include <stdio.h>
 
@@ -46,7 +47,8 @@ int initialize_database(sqlite3 **db, struct config cfg) {
         "iv BLOB NOT NULL, "
         "pswd BLOB NOT NULL, "
         "owner INTEGER NOT NULL, "
-        "FOREIGN KEY(owner) REFERENCES users(id)"
+        "FOREIGN KEY(owner) REFERENCES users(id), "
+        "UNIQUE(source, login, email)"
         ");";
 
     int rc = sqlite3_open(cfg.db_path, db);
@@ -75,8 +77,7 @@ int initialize_database(sqlite3 **db, struct config cfg) {
     return SQLITE_OK;
 }
 
-int
-user_exists(sqlite3* db, const char* username) {
+int user_exists(sqlite3 *db, const char *username) {
     const char *sql_query = "SELECT COUNT(*) FROM users WHERE username = ?;";
     sqlite3_stmt *stmt;
     int rc, count = 0;
@@ -96,4 +97,3 @@ user_exists(sqlite3* db, const char* username) {
 
     return count;
 }
-
