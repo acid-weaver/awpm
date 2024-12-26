@@ -8,7 +8,7 @@
  * sensitive data such as passwords and master keys.
  */
 
-/* Copyright (C) 2024  Acid Weaver acid.weaver@gmail.com
+/* Copyright (C) 2024  Acid Weaver <acid.weaver@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,12 +29,13 @@
 
 #include "memory.h"
 
-int binary_array_random(binary_array_t* bin_arr);
+int generate_random_bytes(unsigned char* ptr, size_t size);
+int generate_hash(const char* input, binary_array_t* output);
 int generate_key_from_password(const unsigned char* salt, const char* password,
                                unsigned char* key);
-int encrypt_string(const unsigned char* key, unsigned char* iv,
-                   const binary_array_t plaintext, binary_array_t* ciphertext);
-int decrypt_string(const unsigned char* key, const unsigned char* iv,
-                   const binary_array_t ciphertext, binary_array_t* plaintext);
+int encrypt_data(const unsigned char* key, const unsigned char* iv,
+                 const binary_array_t plaintext, binary_array_t* ciphertext);
+int decrypt_data(const unsigned char* key, const unsigned char* iv,
+                 const binary_array_t ciphertext, binary_array_t* plaintext);
 
-#endif  // ENCRYPTION_H
+#endif // ENCRYPTION_H

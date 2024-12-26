@@ -8,7 +8,7 @@
  * whole project.
  */
 
-/* Copyright (C) 2024  Acid Weaver acid.weaver@gmail.com
+/* Copyright (C) 2024  Acid Weaver <acid.weaver@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,11 +33,14 @@
 #define OPTIONAL_PROMPT "(optional, hit Enter to skip)"
 #define PSWD_CONFIRMATION "(confirm previously entered value)"
 
-// OpenSSL constants
+// OpenSSL encryption constants
 #define SALT_SIZE 16
 #define KEY_SIZE 32
 #define IV_SIZE 16
 #define ITERATIONS 10000
+
+#define HASH_SIZE 64
+#define HASH_ALG EVP_sha512()
 
 // Error messages
 #define ERR_USER_NOT_FOUND "User not found."
@@ -53,9 +56,10 @@ struct config {
 
 void handle_errors(const char* msg);
 void handle_interrupt(int sig);
+void disable_debugging();
 int std_input(const char* input_name, const char* description, char* result,
               size_t result_size);
 int secure_input(const char* input_name, const char* description, char* result,
                  size_t result_size);
 
-#endif  // UTILS_H
+#endif // UTILS_H

@@ -7,7 +7,7 @@
  * Implements utilities functions declared in utils.h.
  */
 
-/* Copyright (C) 2024  Acid Weaver acid.weaver@gmail.com
+/* Copyright (C) 2024  Acid Weaver <acid.weaver@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/prctl.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -41,20 +42,30 @@ void handle_interrupt(int sig) {
     exit(0);
 }
 
+void disable_debugging() {
+    if(prctl(PR_SET_DUMPABLE, 0) != 0) {
+        perror("Failed to disable core dumps");
+    }
+
+    if(prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY) != 0) {
+        perror("Failed to restrict ptrace");
+    }
+}
+
 int std_input(const char *input_name, const char *description, char *result,
               size_t result_size) {
-    if (!result || result_size == 0) {
+    if(!result || result_size == 0) {
         fprintf(stderr, "Invalid buffer provided for %s input.\n", input_name);
         return -1;
     }
 
-    if (strlen(description) == 0) {
+    if(strlen(description) == 0) {
         printf("Enter %s: ", input_name);
     } else {
         printf("Enter %s %s: ", input_name, description);
     }
 
-    if (fgets(result, result_size, stdin) == NULL) {
+    if(fgets(result, result_size, stdin) == NULL) {
         fprintf(stderr, "Error reading %s.\n", input_name);
         return -1;
     }
@@ -69,13 +80,13 @@ int secure_input(const char *input_name, const char *description, char *result,
     struct termios oldt, newt;
 
     // Disable echo
-    if (tcgetattr(STDIN_FILENO, &oldt) != 0) {
+    if(tcgetattr(STDIN_FILENO, &oldt) != 0) {
         fprintf(stderr, "Error getting terminal attributes.\n");
         return -1;
     }
     newt = oldt;
     newt.c_lflag &= ~ECHO;
-    if (tcsetattr(STDIN_FILENO, TCSANOW, &newt) != 0) {
+    if(tcsetattr(STDIN_FILENO, TCSANOW, &newt) != 0) {
         fprintf(stderr, "Error disabling echo.\n");
         return -1;
     }
@@ -84,7 +95,7 @@ int secure_input(const char *input_name, const char *description, char *result,
     status_code = std_input(input_name, description, result, result_size);
 
     // Restore terminal settings
-    if (tcsetattr(STDIN_FILENO, TCSANOW, &oldt) != 0) {
+    if(tcsetattr(STDIN_FILENO, TCSANOW, &oldt) != 0) {
         fprintf(stderr, "Error restoring terminal attributes.\n");
         return -1;
     }

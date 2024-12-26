@@ -8,7 +8,7 @@
  * adding, updating and retrieving.
  */
 
-/* Copyright (C) 2024  Acid Weaver acid.weaver@gmail.com
+/* Copyright (C) 2024  Acid Weaver <acid.weaver@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -48,8 +48,5 @@ char* cred_data_to_string(const cred_data_t* credential_data);
 int cred_data_upsert(sqlite3* db, const cred_data_t* credential_data);
 int cred_data_get_by_source(sqlite3* db, const user_t user, const char* source,
                             cred_data_t** results, int* result_count);
-int retrieve_and_decipher_by_source(sqlite3* db, const char* source,
-                                    const unsigned char* key, char*** results,
-                                    int* result_count);
 
 #endif  // CREDDATA_H

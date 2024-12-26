@@ -8,7 +8,7 @@
  * the appropriate modules based on user input.
  */
 
-/* Copyright (C) 2024  Acid Weaver acid.weaver@gmail.com
+/* Copyright (C) 2024  Acid Weaver <acid.weaver@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,36 +37,33 @@
 
 int main(int argc, char* argv[]) {
     struct config cfg = {
-        .debug = 0,
+        .debug                    = 0,
         .multiple_accs_per_source = 0,
-        .db_path = "awpm.db",
+        .db_path                  = "awpm.db",
     };
     user_t user = {0};
     sqlite3* db = NULL;
 
-    signal(SIGINT, handle_interrupt);   // Handle Ctrl-C
-    signal(SIGTERM, handle_interrupt);  // Handle kill signals
-
-    if (argc < 2) {
+    signal(SIGINT, handle_interrupt);  /* Handle Ctrl-C */
+    signal(SIGTERM, handle_interrupt); /* Handle kill signals */
+    disable_debugging(); /* To disable ability of reading memory with debug
+                          * tools
+                          */
+    if(argc < 2) {
         fprintf(stderr, "Usage: pm %s | %s | %s | %s [%s]\n", CLI_NEW,
                 CLI_FORCE_NEW, CLI_GET, CLI_SET_MASTER_PSWD, CLI_DEBUG_MODE);
         return 1;
     }
 
     user = user_init();
-    for (int i = 1; i < argc; i++) {
-        printf("Parameter %s.\n", argv[i]);
-        if (strcmp(argv[i], CLI_DEBUG_MODE) == 0) {
+    for(int i = 1; i < argc; i++) {
+        if(strcmp(argv[i], CLI_DEBUG_MODE) == 0) {
             cfg.debug = 1;
             printf("Debug mode enabled.\n");
         }
 
-        if (strcmp(argv[i], CLI_USER) == 0) {
-            if (cfg.debug) {
-                printf("Going to parse user.\n");
-                printf("%s\n", argv[i + 1]);
-            }
-            if (i + 1 <= argc) {
+        if(strcmp(argv[i], CLI_USER) == 0) {
+            if(i + 1 <= argc) {
                 strncpy(user.username, argv[i + 1], sizeof(user.username) - 1);
                 user.username[sizeof(user.username) - 1] = '\0';
                 i++;
@@ -79,7 +76,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if (strlen(user.username) == 0) {
+    if(strlen(user.username) == 0) {
         handle_errors("Unauthorized access impossible.\n");
         return 1;
     }
@@ -88,13 +85,13 @@ int main(int argc, char* argv[]) {
 
     initialize_database(&db, cfg);
 
-    if (strcmp(argv[1], CLI_NEW) == 0) {
+    if(strcmp(argv[1], CLI_NEW) == 0) {
         handle_add_new_entry(db, cfg, &user);
-    } else if (strcmp(argv[1], CLI_GET) == 0) {
+    } else if(strcmp(argv[1], CLI_GET) == 0) {
         handle_retrieve_creddata(db, cfg, &user);
-    } else if (strcmp(argv[1], CLI_SET_MASTER_PSWD) == 0) {
+    } else if(strcmp(argv[1], CLI_SET_MASTER_PSWD) == 0) {
         handle_set_master_pswd(db, cfg, &user);
-    } else if (strcmp(argv[1], CLI_FORCE_NEW) == 0) {
+    } else if(strcmp(argv[1], CLI_FORCE_NEW) == 0) {
         cfg.multiple_accs_per_source = 1;
         handle_add_new_entry(db, cfg, &user);
     } else {

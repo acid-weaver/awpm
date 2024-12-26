@@ -7,7 +7,7 @@
  * Implements the encryption and decryption functions declared in encryption.h.
  */
 
-/* Copyright (C) 2024  Acid Weaver acid.weaver@gmail.com
+/* Copyright (C) 2024  Acid Weaver <acid.weaver@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,17 +33,46 @@
 #include "memory.h"
 #include "utils.h"
 
-int binary_array_random(binary_array_t* bin_arr) {
-    if (bin_arr->ptr == NULL || bin_arr->size == 0) {
+int generate_random_bytes(unsigned char* ptr, size_t size) {
+    if (ptr == NULL || size == 0) {
         fprintf(stderr, "Invalid dynamic string: NULL pointer or zero size.\n");
         return -1;
     }
 
-    if (RAND_bytes(bin_arr->ptr, bin_arr->size) != 1) {
+    if (RAND_bytes(ptr, size) != 1) {
         handle_errors("Failed to generate random data");
     }
+    return 0;
+}
 
-    bin_arr->len = bin_arr->size;
+int generate_hash(const char* input, binary_array_t* output) {
+    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+
+    if (ctx == NULL) {
+        fprintf(stderr, "Failed to create EVP_MD_CTX\n");
+        return -1;
+    }
+
+    if (EVP_DigestInit_ex(ctx, HASH_ALG, NULL) != 1) {
+        fprintf(stderr, "Failed to initialize digest\n");
+        EVP_MD_CTX_free(ctx);
+        return -1;
+    }
+
+    if (EVP_DigestUpdate(ctx, input, strlen(input)) != 1) {
+        fprintf(stderr, "Failed to update digest\n");
+        EVP_MD_CTX_free(ctx);
+        return -1;
+    }
+
+    if (EVP_DigestFinal_ex(ctx, output->ptr, (unsigned int*)&output->len)
+        != 1) {
+        fprintf(stderr, "Failed to finalize digest\n");
+        EVP_MD_CTX_free(ctx);
+        return -1;
+    }
+
+    EVP_MD_CTX_free(ctx);
     return 0;
 }
 
@@ -63,26 +92,21 @@ int generate_key_from_password(const unsigned char* salt, const char* password,
     return 0;
 }
 
-int encrypt_string(const unsigned char* key, unsigned char* iv,
-                   const binary_array_t plaintext, binary_array_t* ciphertext) {
+int encrypt_data(const unsigned char* key, const unsigned char* iv,
+                 const binary_array_t plaintext, binary_array_t* ciphertext) {
     EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-    int len = 0;
+    int len             = 0;
 
     if (ctx == NULL) {
         handle_errors("Failed to create encryption context");
     }
 
-    if (key == NULL || iv == NULL || plaintext.ptr == NULL ||
-        plaintext.size == 0 || plaintext.len == 0 || ciphertext == NULL) {
+    if (key == NULL || iv == NULL || plaintext.ptr == NULL
+        || plaintext.size == 0 || plaintext.len == 0 || ciphertext == NULL) {
         fprintf(stderr,
                 "Input parameters to encryption function are invalid.\n");
         EVP_CIPHER_CTX_free(ctx);
         return -1;
-    }
-
-    // Generate random IV
-    if (RAND_bytes(iv, IV_SIZE) != 1) {
-        handle_errors("Failed to generate IV");
     }
 
     // Initialize AES encryption
@@ -91,15 +115,16 @@ int encrypt_string(const unsigned char* key, unsigned char* iv,
     }
 
     // Prepare ciphertext buffer
-    *ciphertext = binary_array_alloc(plaintext.len +
-                                     EVP_CIPHER_block_size(EVP_aes_256_cbc()));
+    *ciphertext = binary_array_alloc(
+        plaintext.len + EVP_CIPHER_block_size(EVP_aes_256_cbc()));
     if (ciphertext->ptr == NULL) {
         handle_errors("Memory allocation for ciphertext failed");
     }
 
     // Encrypt the plaintext
     if (EVP_EncryptUpdate(ctx, ciphertext->ptr, &len, plaintext.ptr,
-                          plaintext.len) != 1) {
+                          plaintext.len)
+        != 1) {
         handle_errors("Failed during AES encryption update");
     }
     ciphertext->len = len;
@@ -115,10 +140,10 @@ int encrypt_string(const unsigned char* key, unsigned char* iv,
     return 0;
 }
 
-int decrypt_string(const unsigned char* key, const unsigned char* iv,
-                   const binary_array_t ciphertext, binary_array_t* plaintext) {
+int decrypt_data(const unsigned char* key, const unsigned char* iv,
+                 const binary_array_t ciphertext, binary_array_t* plaintext) {
     EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-    int len = 0;
+    int len             = 0;
 
     if (!ctx) {
         handle_errors("Failed to create decryption context");
@@ -134,7 +159,8 @@ int decrypt_string(const unsigned char* key, const unsigned char* iv,
     }
 
     if (EVP_DecryptUpdate(ctx, plaintext->ptr, &len, ciphertext.ptr,
-                          ciphertext.len) != 1) {
+                          ciphertext.len)
+        != 1) {
         handle_errors("Failed during AES decryption update");
     }
     plaintext->len = len;
@@ -145,7 +171,7 @@ int decrypt_string(const unsigned char* key, const unsigned char* iv,
     }
     plaintext->len += len;
 
-    (plaintext->ptr)[plaintext->len] = '\0';  // Null-terminate the string
+    (plaintext->ptr)[plaintext->len] = '\0'; // Null-terminate the string
 
     EVP_CIPHER_CTX_free(ctx);
     return 0;

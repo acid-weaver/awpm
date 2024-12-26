@@ -7,7 +7,7 @@
  * Implements the database initialization functions declared in database.h.
  */
 
-/* Copyright (C) 2024  Acid Weaver acid.weaver@gmail.com
+/* Copyright (C) 2024  Acid Weaver <acid.weaver@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -52,14 +52,14 @@ int initialize_database(sqlite3 **db, struct config cfg) {
         ");";
 
     int rc = sqlite3_open(cfg.db_path, db);
-    if (rc != SQLITE_OK) {
+    if(rc != SQLITE_OK) {
         fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(*db));
         return rc;
     }
 
     char *err_msg = NULL;
-    rc = sqlite3_exec(*db, sql_create_users_table, 0, 0, &err_msg);
-    if (rc != SQLITE_OK) {
+    rc            = sqlite3_exec(*db, sql_create_users_table, 0, 0, &err_msg);
+    if(rc != SQLITE_OK) {
         fprintf(stderr, "SQL error (users table): %s\n", err_msg);
         sqlite3_free(err_msg);
         sqlite3_close(*db);
@@ -67,7 +67,7 @@ int initialize_database(sqlite3 **db, struct config cfg) {
     }
 
     rc = sqlite3_exec(*db, sql_create_creddata_table, 0, 0, &err_msg);
-    if (rc != SQLITE_OK) {
+    if(rc != SQLITE_OK) {
         fprintf(stderr, "SQL error (creddata table): %s\n", err_msg);
         sqlite3_free(err_msg);
         sqlite3_close(*db);
@@ -83,14 +83,14 @@ int user_exists(sqlite3 *db, const char *username) {
     int rc, count = 0;
 
     rc = sqlite3_prepare_v2(db, sql_query, -1, &stmt, NULL);
-    if (rc != SQLITE_OK) {
+    if(rc != SQLITE_OK) {
         fprintf(stderr, "Failed to prepare query: %s\n", sqlite3_errmsg(db));
         return -1;
     }
 
     sqlite3_bind_text(stmt, 1, username, -1, SQLITE_STATIC);
 
-    if (sqlite3_step(stmt) == SQLITE_ROW) {
+    if(sqlite3_step(stmt) == SQLITE_ROW) {
         count = sqlite3_column_int(stmt, 0);
     }
     sqlite3_finalize(stmt);
