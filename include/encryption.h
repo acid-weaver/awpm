@@ -30,7 +30,8 @@
 #include "memory.h"
 
 int generate_random_bytes(unsigned char* ptr, size_t size);
-int generate_hash(const char* input, binary_array_t* output);
+int generate_hash(const void* input, const size_t input_len,
+                  binary_array_t* output);
 int generate_key_from_password(const unsigned char* salt, const char* password,
                                unsigned char* key);
 int encrypt_data(const unsigned char* key, const unsigned char* iv,

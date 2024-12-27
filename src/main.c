@@ -35,12 +35,13 @@
 #include "db/users.h"
 #include "utils.h"
 
+struct config cfg = {
+    .debug                    = 0,
+    .multiple_accs_per_source = 0,
+    .db_path                  = "awpm.db",
+};
+
 int main(int argc, char* argv[]) {
-    struct config cfg = {
-        .debug                    = 0,
-        .multiple_accs_per_source = 0,
-        .db_path                  = "awpm.db",
-    };
     user_t user = {0};
     sqlite3* db = NULL;
 
@@ -49,21 +50,21 @@ int main(int argc, char* argv[]) {
     disable_debugging(); /* To disable ability of reading memory with debug
                           * tools
                           */
-    if(argc < 2) {
+    if (argc < 2) {
         fprintf(stderr, "Usage: pm %s | %s | %s | %s [%s]\n", CLI_NEW,
                 CLI_FORCE_NEW, CLI_GET, CLI_SET_MASTER_PSWD, CLI_DEBUG_MODE);
         return 1;
     }
 
     user = user_init();
-    for(int i = 1; i < argc; i++) {
-        if(strcmp(argv[i], CLI_DEBUG_MODE) == 0) {
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], CLI_DEBUG_MODE) == 0) {
             cfg.debug = 1;
             printf("Debug mode enabled.\n");
         }
 
-        if(strcmp(argv[i], CLI_USER) == 0) {
-            if(i + 1 <= argc) {
+        if (strcmp(argv[i], CLI_USER) == 0) {
+            if (i + 1 <= argc) {
                 strncpy(user.username, argv[i + 1], sizeof(user.username) - 1);
                 user.username[sizeof(user.username) - 1] = '\0';
                 i++;
@@ -76,7 +77,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if(strlen(user.username) == 0) {
+    if (strlen(user.username) == 0) {
         handle_errors("Unauthorized access impossible.\n");
         return 1;
     }
@@ -85,15 +86,15 @@ int main(int argc, char* argv[]) {
 
     initialize_database(&db, cfg);
 
-    if(strcmp(argv[1], CLI_NEW) == 0) {
-        handle_add_new_entry(db, cfg, &user);
-    } else if(strcmp(argv[1], CLI_GET) == 0) {
-        handle_retrieve_creddata(db, cfg, &user);
-    } else if(strcmp(argv[1], CLI_SET_MASTER_PSWD) == 0) {
-        handle_set_master_pswd(db, cfg, &user);
-    } else if(strcmp(argv[1], CLI_FORCE_NEW) == 0) {
+    if (strcmp(argv[1], CLI_NEW) == 0) {
+        handle_add_new_entry(db, &user);
+    } else if (strcmp(argv[1], CLI_GET) == 0) {
+        handle_retrieve_creddata(db, &user);
+    } else if (strcmp(argv[1], CLI_SET_MASTER_PSWD) == 0) {
+        handle_set_master_pswd(db, &user);
+    } else if (strcmp(argv[1], CLI_FORCE_NEW) == 0) {
         cfg.multiple_accs_per_source = 1;
-        handle_add_new_entry(db, cfg, &user);
+        handle_add_new_entry(db, &user);
     } else {
         fprintf(stderr, "Unknown parameter: %s\n", argv[1]);
     }

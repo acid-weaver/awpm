@@ -39,11 +39,8 @@
 #include "db/users.h"
 struct sqlite3;
 
-void handle_add_new_entry(struct sqlite3* db, const struct config cfg,
-                          user_t* user);
-void handle_retrieve_creddata(struct sqlite3* db, const struct config cfg,
-                              user_t* user);
-void handle_set_master_pswd(struct sqlite3* db, const struct config cfg,
-                            user_t* user);
+void handle_add_new_entry(struct sqlite3* db, user_t* user);
+void handle_retrieve_creddata(struct sqlite3* db, user_t* user);
+void handle_set_master_pswd(struct sqlite3* db, user_t* user);
 
-#endif  // CLI_H
+#endif // CLI_H

@@ -45,16 +45,12 @@ const char* get_current_username() {
 
 user_t user_init() {
     user_t user = {
-        .id        = -1,
-        .username  = "",
-        .salt      = {0},
-        .master_iv = {0},
-        .master_pswd =
-            {
-                .size = 0,
-                .len  = 0,
-                .ptr  = NULL,
-            },
+        .id          = -1,
+        .username    = "",
+        .salt        = {0},
+        .master_iv   = {0},
+        .master_pswd = {0},
+        .hash        = {0},
     };
     const char* username = NULL;
 
@@ -73,102 +69,193 @@ user_t user_init() {
 }
 
 int user_set_master_pswd(user_t* user) {
-    binary_array_t random_bytes =
-                       {
-                           .size = 0,
-                           .len  = 0,
-                           .ptr  = NULL,
-                       },
-                   secure_buffer =
-                       {
-                           .size = 0,
-                           .len  = 0,
-                           .ptr  = NULL,
-                       },
-                   hash =
-                       {
-                           .size = 0,
-                           .len  = 0,
-                           .ptr  = NULL,
-                       },
-                   confirm_hash = {
-                       .size = 0,
-                       .len  = 0,
-                       .ptr  = NULL,
-                   };
-    unsigned char key[KEY_SIZE];
+    binary_array_t random_bytes = {0}, ciphered_random = {0},
+                   secure_buffer = {0}, ciphered_buffer = {0},
+                   session_key = {0}, master_key = {0};
+    unsigned char session_iv[IV_SIZE];
 
-    random_bytes = binary_array_alloc(IV_SIZE);
+    /*
+     * Initialize some required later variables
+     */
+
+    if (generate_random_bytes(user->master_iv, IV_SIZE) != 0) {
+        fprintf(stderr, "Failed to generate IV for master password.\n");
+        return -1;
+    }
+
+    session_key = binary_array_secure_alloc(KEY_SIZE);
+    if (generate_random_bytes(session_key.ptr, KEY_SIZE) != 0) {
+        fprintf(stderr, "Failed to generate session key.\n");
+        return -1;
+    }
+    session_key.len = KEY_SIZE;
+
+    if (generate_random_bytes(session_iv, IV_SIZE) != 0) {
+        binary_array_secure_free(&session_key);
+        fprintf(stderr, "Failed to generate session IV.\n");
+        return -1;
+    }
+
+    random_bytes = binary_array_secure_alloc(IV_SIZE);
     if (generate_random_bytes(random_bytes.ptr, random_bytes.size) != 0) {
-        handle_errors("Failed to generate random data.");
+        fprintf(stderr, "Failed to generate random data.\n");
+        return -1;
     }
     random_bytes.len = random_bytes.size;
+
+    user->hash = binary_array_alloc(HASH_SIZE);
+    if (generate_hash(random_bytes.ptr, random_bytes.len, &user->hash) != 0) {
+        fprintf(stderr, "Failed to generate hash from random bytes.\n");
+    }
+
+    if (encrypt_data(session_key.ptr, session_iv, random_bytes,
+                     &ciphered_random)
+        != 0) {
+        binary_array_secure_free(&session_key);
+        binary_array_secure_free(&random_bytes);
+        handle_errors("Failed temporarily encrypt memory data.");
+    }
+    binary_array_secure_free(&random_bytes);
+
+    /*
+     * Start of main logic - actually ask master password from user, ask to
+     * confirm this value and cipher random bytes with derived from this
+     * password key. Store cipher values.
+     */
 
     secure_buffer = binary_array_secure_alloc(INPUT_BUFF_SIZE);
     if (secure_input("master password", "", (char*)secure_buffer.ptr,
                      secure_buffer.size)
         != 0) {
+        binary_array_secure_free(&session_key);
+        binary_array_secure_free(&random_bytes);
+        binary_array_secure_free(&secure_buffer);
         fprintf(stderr, "Error reading master password.\n");
         return -1;
     }
     secure_buffer.len = strlen((char*)secure_buffer.ptr);
 
-    hash = binary_array_alloc(HASH_SIZE);
-    if (generate_hash((char*)secure_buffer.ptr, &hash) != 0) {
-        handle_errors("Failed to generate hash from provided value.");
+    if (encrypt_data(session_key.ptr, session_iv, secure_buffer,
+                     &ciphered_buffer)
+        != 0) {
+        binary_array_secure_free(&session_key);
+        binary_array_secure_free(&random_bytes);
+        binary_array_secure_free(&secure_buffer);
+        handle_errors("Failed to temporarily ciphrate data.");
     }
+    binary_array_secure_free(&secure_buffer);
 
+    secure_buffer = binary_array_secure_alloc(INPUT_BUFF_SIZE);
     if (secure_input("master password", PSWD_CONFIRMATION,
                      (char*)secure_buffer.ptr, INPUT_BUFF_SIZE)
         != 0) {
+        binary_array_secure_free(&session_key);
+        binary_array_secure_free(&random_bytes);
+        binary_array_secure_free(&secure_buffer);
         fprintf(stderr, "Error reading confirmation of master password.\n");
         return -1;
     }
     secure_buffer.len = strlen((char*)secure_buffer.ptr);
 
-    confirm_hash = binary_array_alloc(HASH_SIZE);
-    if (generate_hash((char*)secure_buffer.ptr, &confirm_hash) != 0) {
-        handle_errors("Failed to generate hash from provided value.");
+    if (decrypt_data(session_key.ptr, session_iv, ciphered_buffer,
+                     &ciphered_buffer)
+        != 0) {
+        binary_array_secure_free(&session_key);
+        binary_array_secure_free(&random_bytes);
+        binary_array_secure_free(&secure_buffer);
+        handle_errors("Failed to decipher temporarily ciphered memory data.");
     }
 
-    if (hash.len != confirm_hash.len
-        || memcmp(hash.ptr, confirm_hash.ptr, hash.len) != 0) {
-        fprintf(stderr, "Entered values for master password are different!\n");
+    if (secure_buffer.len != ciphered_buffer.len
+        || strncmp((char*)secure_buffer.ptr, (char*)ciphered_buffer.ptr,
+                   secure_buffer.len)
+               != 0) {
+        binary_array_secure_free(&session_key);
+        binary_array_secure_free(&random_bytes);
+        binary_array_secure_free(&secure_buffer);
+        binary_array_secure_free(&ciphered_buffer);
+        fprintf(stderr, "Entered values are different! Try again.\n");
         return 1;
     }
+    binary_array_secure_free(&ciphered_buffer);
 
-    if (generate_key_from_password(user->salt, master_pswd, key) != 0) {
-        fprintf(stderr, "Failed to generate key from master password.\n");
-        return -1;
-    }
-
-    if (generate_random_bytes(user->master_iv, IV_SIZE) != 0) {
-        handle_errors("Failed to generate IV.");
-    }
-
-    if (encrypt_data(key, user->master_iv, random_bytes, &user->master_pswd)
+    if (decrypt_data(session_key.ptr, session_iv, ciphered_random,
+                     &random_bytes)
         != 0) {
-        handle_errors("Failed to encrypt master password.");
+        binary_array_secure_free(&session_key);
+        binary_array_secure_free(&random_bytes);
+        binary_array_secure_free(&secure_buffer);
+        handle_errors("Failed to decrypt temporarily encrypted memory data.");
     }
+    binary_array_secure_free(&session_key);
 
+    master_key = binary_array_secure_alloc(KEY_SIZE);
+    if (generate_key_from_password(user->salt, (char*)secure_buffer.ptr,
+                                   master_key.ptr)
+        != 0) {
+        binary_array_secure_free(&secure_buffer);
+        binary_array_secure_free(&master_key);
+        binary_array_free(&random_bytes);
+        handle_errors("Failed to generate key from entered master password.\n");
+    }
+    binary_array_secure_free(&secure_buffer);
+    master_key.len = KEY_SIZE;
+
+    if (encrypt_data(master_key.ptr, user->master_iv, random_bytes,
+                     &user->master_pswd)
+        != 0) {
+        binary_array_secure_free(&master_key);
+        binary_array_secure_free(&random_bytes);
+        handle_errors("Failed to cipher data.");
+    }
+    binary_array_secure_free(&master_key);
+    binary_array_secure_free(&random_bytes);
     return 0;
 }
 
-int user_verify_master_pswd(const user_t user, const unsigned char* key) {
-    binary_array_t random_bytes = {
-        .size = 0,
-        .len  = 0,
-        .ptr  = NULL,
-    };
+int user_verify_master_pswd(const user_t user,
+                            const unsigned char* master_key) {
+    binary_array_t random_bytes = {0}, hash = {0};
 
-    if (decrypt_data(key, user.master_iv, user.master_pswd, &random_bytes)
-        != 0) {
+    if (master_key == NULL) {
         fprintf(stderr,
-                "Failed to verify your master password, ensure you entered "
-                "right value.\n");
+                "Missing password to verify in verify_master_pswd function.\n");
+        return -1;
+    }
+
+    if (decrypt_data(master_key, user.master_iv, user.master_pswd,
+                     &random_bytes)
+        != 0) {
+        binary_array_secure_free(&random_bytes);
+        fprintf(
+            stderr,
+            "Failed to verify provided password at 1st verification step.\n");
+        return 1;
+    }
+
+    hash = binary_array_alloc(HASH_SIZE);
+    if (generate_hash(random_bytes.ptr, random_bytes.len, &hash) != 0) {
+        binary_array_secure_free(&random_bytes);
+        handle_errors("Failed to generate hash from decrypted random data.");
+    }
+    binary_array_secure_free(&random_bytes);
+
+    if (user.hash.len != hash.len
+        || memcmp(user.hash.ptr, hash.ptr, hash.len) != 0) {
+        fprintf(stderr,
+                "Failed to verify master password at 2nd verification step.\n");
         return 1;
     } else {
-        printf("Master password successfully verified!\n");
+        printf("Master password successfully virified!\n");
+    }
+
+    if (cfg.debug) {
+        printf("==========\n");
+        printf("DEBUG. Entered user_verify_master_pswd.\n");
+        printf("DEBUG. user hash: %s\n", binary_array_to_string(&user.hash));
+        printf("\thash from master_password: %s\n",
+               binary_array_to_string(&hash));
+        printf("==========\n");
     }
 
     return 0;
@@ -214,7 +301,7 @@ int populate_user_from_row(sqlite3_stmt* stmt, user_t* user) {
     if (buffer != NULL && buffer_size == IV_SIZE) {
         memcpy(user->master_iv, buffer, IV_SIZE);
     } else {
-        fprintf(stderr, "Invalid or missing master IV for user: %s\n",
+        fprintf(stderr, "Invalid or missing master_iv for user: %s\n",
                 user->username);
         return -1;
     }
@@ -227,7 +314,20 @@ int populate_user_from_row(sqlite3_stmt* stmt, user_t* user) {
         memcpy(user->master_pswd.ptr, buffer, buffer_size);
         user->master_pswd.len = buffer_size;
     } else {
-        fprintf(stderr, "Invalid or missing master password for user: %s\n",
+        fprintf(stderr, "Invalid or missing master_pswd for user: %s\n",
+                user->username);
+        return -1;
+    }
+
+    // Populate `hash`
+    buffer      = sqlite3_column_blob(stmt, 5);
+    buffer_size = sqlite3_column_bytes(stmt, 5);
+    if (buffer != NULL && buffer_size > 0) {
+        user->hash = binary_array_alloc(buffer_size);
+        memcpy(user->hash.ptr, buffer, buffer_size);
+        user->hash.len = buffer_size;
+    } else {
+        fprintf(stderr, "Invalid or missing hash for user: %s\n",
                 user->username);
         return -1;
     }
@@ -238,8 +338,8 @@ int populate_user_from_row(sqlite3_stmt* stmt, user_t* user) {
 int add_user(sqlite3* db, user_t* user) {
     sqlite3_stmt* stmt;
     const char* sql_insert =
-        "INSERT INTO users (username, salt, master_iv, master_pswd) VALUES (?, "
-        "?, ?, ?);";
+        "INSERT INTO users (username, salt, master_iv, master_pswd, hash) "
+        "VALUES (?, ?, ?, ?, ?);";
     int rc;
 
     if (RAND_bytes(user->salt, SALT_SIZE) != 1) {
@@ -261,8 +361,10 @@ int add_user(sqlite3* db, user_t* user) {
 
     sqlite3_bind_text(stmt, 1, user->username, -1, SQLITE_STATIC);
     sqlite3_bind_blob(stmt, 2, user->salt, SALT_SIZE, SQLITE_STATIC);
-    sqlite3_bind_blob(stmt, 3, user->master_iv, IV_SIZE, SQLITE_TRANSIENT);
+    sqlite3_bind_blob(stmt, 3, user->master_iv, IV_SIZE, SQLITE_STATIC);
     sqlite3_bind_blob(stmt, 4, user->master_pswd.ptr, user->master_pswd.len,
+                      SQLITE_STATIC);
+    sqlite3_bind_blob(stmt, 5, user->hash.ptr, user->hash.len,
                       SQLITE_TRANSIENT);
 
     rc = sqlite3_step(stmt);
@@ -279,8 +381,8 @@ int add_user(sqlite3* db, user_t* user) {
 int get_user(sqlite3* db, user_t* user) {
     sqlite3_stmt* stmt = NULL;
     const char* sql_query =
-        "SELECT id, username, salt, master_iv, master_pswd FROM users WHERE "
-        "username = ?;";
+        "SELECT id, username, salt, master_iv, master_pswd, hash FROM users "
+        "WHERE username = ?;";
     int rc = 0;
 
     if (user == NULL || strlen(user->username) == 0) {
@@ -359,34 +461,4 @@ int get_or_add_user(sqlite3* db, user_t* user) {
                 user->username);
         return -1;
     }
-}
-
-int write_master_pswd(sqlite3* db, const int user_id,
-                      const binary_array_t master_pswd,
-                      const unsigned char* master_iv) {
-    sqlite3_stmt* stmt;
-    const char* sql_update =
-        "UPDATE users SET master_iv = ?, master_pswd = ? WHERE id = ?;";
-
-    int rc = sqlite3_prepare_v2(db, sql_update, -1, &stmt, NULL);
-
-    if (rc != SQLITE_OK) {
-        fprintf(stderr, "Failed to prepare update statement: %s\n",
-                sqlite3_errmsg(db));
-        return -1;
-    }
-
-    sqlite3_bind_blob(stmt, 1, master_iv, IV_SIZE, SQLITE_TRANSIENT);
-    sqlite3_bind_blob(stmt, 2, master_pswd.ptr, master_pswd.len,
-                      SQLITE_TRANSIENT);
-    sqlite3_bind_int(stmt, 3, user_id);
-
-    rc = sqlite3_step(stmt);
-    if (rc != SQLITE_DONE) {
-        fprintf(stderr, "Failed to update master_pswd: %s\n",
-                sqlite3_errmsg(db));
-    }
-
-    sqlite3_finalize(stmt);
-    return rc == SQLITE_DONE ? SQLITE_OK : rc;
 }

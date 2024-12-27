@@ -45,7 +45,8 @@ int generate_random_bytes(unsigned char* ptr, size_t size) {
     return 0;
 }
 
-int generate_hash(const char* input, binary_array_t* output) {
+int generate_hash(const void* input, const size_t input_len,
+                  binary_array_t* output) {
     EVP_MD_CTX* ctx = EVP_MD_CTX_new();
 
     if (ctx == NULL) {
@@ -59,7 +60,7 @@ int generate_hash(const char* input, binary_array_t* output) {
         return -1;
     }
 
-    if (EVP_DigestUpdate(ctx, input, strlen(input)) != 1) {
+    if (EVP_DigestUpdate(ctx, input, input_len) != 1) {
         fprintf(stderr, "Failed to update digest\n");
         EVP_MD_CTX_free(ctx);
         return -1;
@@ -134,6 +135,19 @@ int encrypt_data(const unsigned char* key, const unsigned char* iv,
         handle_errors("Failed during AES encryption final step");
     }
     ciphertext->len += len;
+
+    if (cfg.debug) {
+        printf("==========\n");
+        printf("DEBUG. Entered encrypt_data function.\n");
+        printf("DEBUG. encryption key: ");
+        for (size_t i = 0; i < KEY_SIZE; i++) printf("%02x", key[i]);
+        printf("\n\tIV: ");
+        for (size_t i = 0; i < IV_SIZE; i++) printf("%02x", iv[i]);
+        printf("\n\tplaintext: %s\n\tciphered value: %s\n",
+               binary_array_to_string(&plaintext),
+               binary_array_to_string(ciphertext));
+        printf("==========\n");
+    }
 
     // Cleanup
     EVP_CIPHER_CTX_free(ctx);

@@ -40,7 +40,7 @@
 #define ITERATIONS 10000
 
 #define HASH_SIZE 64
-#define HASH_ALG EVP_sha512()
+#define HASH_ALG EVP_sha3_512()
 
 // Error messages
 #define ERR_USER_NOT_FOUND "User not found."
@@ -51,6 +51,8 @@ struct config {
     int debug;
     int multiple_accs_per_source;
 };
+
+extern struct config cfg;
 
 #include <stdlib.h>
 
