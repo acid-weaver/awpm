@@ -87,7 +87,7 @@ void handle_add_new_entry(struct sqlite3* db, user_t* user) {
      */
 
     if (cfg.multiple_accs_per_source == 0
-        && cred_data_get_by_source(db, *user, credential_data.source, &results,
+        && get_cred_data_by_source(db, *user, credential_data.source, &results,
                                    &result_count)
                != 0) {
         fprintf(stderr,
@@ -224,7 +224,7 @@ void handle_add_new_entry(struct sqlite3* db, user_t* user) {
     }
     binary_array_secure_free(&master_key);
 
-    if (cred_data_upsert(db, &credential_data) == 0) {
+    if (upsert_cred_data(db, &credential_data) == 0) {
         printf("Credential added successfully.\n");
     } else {
         fprintf(stderr, "Failed to upsert credential.\n");
@@ -262,7 +262,7 @@ void handle_retrieve_creddata(struct sqlite3* db, user_t* user) {
         return;
     }
 
-    if (cred_data_get_by_source(db, *user, source, &results, &result_count)
+    if (get_cred_data_by_source(db, *user, source, &results, &result_count)
         != 0) {
         fprintf(stderr, "Failed to retrieve credential data.\n");
         return;
@@ -331,7 +331,209 @@ void handle_retrieve_creddata(struct sqlite3* db, user_t* user) {
     binary_array_secure_free(&master_key);
 }
 
-void handle_set_master_pswd(struct sqlite3* db, user_t* user) {
+void handle_update_creddata(struct sqlite3* db, user_t* user) {
+    cred_data_t credential_data_to_update = {0};
+    binary_array_t secure_buffer = {0}, master_key = {0}, session_key = {0};
+    unsigned char session_iv[IV_SIZE];
+    int status_code = 0;
+
+    status_code = get_user(db, user);
+    if (status_code == 1) {
+        fprintf(stderr,
+                "Current user NOT registered in database, there is NO stored "
+                "passwords for %s.\n",
+                user->username);
+        return;
+    } else if (status_code != 0) {
+        fprintf(stderr, "Unexpected error while executing get_user.\n");
+        return;
+    }
+
+    if (cfg.debug) {
+        printf("DEBUG. user id is: %d\n", user->id);
+    }
+
+    /*
+     * GET DATA TO EDIT
+     */
+
+    if (std_input("source", "", credential_data_to_update.source,
+                  INPUT_BUFF_SIZE)
+        != 0) {
+        fprintf(stderr, "Error reading source.\n");
+        return;
+    }
+
+    if (std_input("login", "", credential_data_to_update.login, INPUT_BUFF_SIZE)
+        != 0) {
+        fprintf(stderr, "Error reading login.\n");
+        return;
+    }
+
+    if (std_input("e-mail", "", credential_data_to_update.email,
+                  INPUT_BUFF_SIZE)
+        != 0) {
+        fprintf(stderr, "Error reading e-mail.\n");
+        return;
+    }
+
+    if (get_cred_data(db, *user, credential_data_to_update,
+                      &credential_data_to_update)
+        != 0) {
+        fprintf(stderr, "Failed to retrieve credential data.\n");
+        return;
+    }
+
+    if (credential_data_to_update.id == 0) {
+        printf("No data with provided source, login and email.\n");
+        return;
+    }
+
+    /*
+     * GET NEW VALUES
+     */
+
+    if (std_input("Source", "", credential_data_to_update.source,
+                  INPUT_BUFF_SIZE)
+        != 0) {
+        fprintf(stderr, "Error at Source input.\n");
+        return;
+    }
+
+    if (std_input("Login", "", credential_data_to_update.login, INPUT_BUFF_SIZE)
+        != 0) {
+        fprintf(stderr, "Error at Source input.\n");
+        return;
+    }
+
+    if (std_input("E-mail", "", credential_data_to_update.email,
+                  INPUT_BUFF_SIZE)
+        != 0) {
+        fprintf(stderr, "Error at Source input.\n");
+        return;
+    }
+
+    /*
+     * CREDENTIAL SECTION
+     * Generating session credentials to cipher data, that not currently in
+     * usage. Erase all credential data after operations done
+     */
+
+    session_key = binary_array_secure_alloc(KEY_SIZE);
+    if (generate_random_bytes(session_key.ptr, session_key.size) != 0) {
+        handle_errors("Failed to generate session encryption metadata.");
+    }
+    session_key.len = session_key.size;
+
+    if (generate_random_bytes(session_iv, IV_SIZE) != 0) {
+        binary_array_secure_free(&session_key);
+        handle_errors("Failed to generate session encryption metadata.");
+    }
+
+    /* Prompt for password to store */
+    secure_buffer = binary_array_secure_alloc(INPUT_BUFF_SIZE);
+    if (secure_input("password to store", "", (char*)secure_buffer.ptr,
+                     secure_buffer.size)
+        != 0) {
+        binary_array_secure_free(&session_key);
+        binary_array_secure_free(&secure_buffer);
+        fprintf(stderr, "Error reading password.\n");
+        return;
+    }
+    secure_buffer.len = strlen((char*)secure_buffer.ptr);
+
+    /*
+     * We don't need entered password until encryption will start
+     */
+
+    if (encrypt_data(session_key.ptr, session_iv, secure_buffer,
+                     &credential_data_to_update.pswd)
+        != 0) {
+        binary_array_secure_free(&session_key);
+        binary_array_secure_free(&secure_buffer);
+        binary_array_secure_free(&credential_data_to_update.pswd);
+        fprintf(stderr, "Failed to temporarily cipher important data.\n");
+        return;
+    }
+    binary_array_secure_free(&secure_buffer);
+
+    /* Prompt for encryption (master) password */
+    secure_buffer = binary_array_secure_alloc(INPUT_BUFF_SIZE);
+    if (secure_input("master password", "", (char*)secure_buffer.ptr,
+                     secure_buffer.size)
+        != 0) {
+        binary_array_secure_free(&session_key);
+        binary_array_secure_free(&secure_buffer);
+        binary_array_secure_free(&credential_data_to_update.pswd);
+        handle_errors("Failed to read encryption password.");
+        return;
+    }
+    secure_buffer.len = strlen((char*)secure_buffer.ptr);
+
+    master_key = binary_array_secure_alloc(KEY_SIZE);
+    if (generate_key_from_password(user->salt, (char*)secure_buffer.ptr,
+                                   master_key.ptr)
+        != 0) {
+        binary_array_secure_free(&session_key);
+        binary_array_secure_free(&secure_buffer);
+        binary_array_secure_free(&credential_data_to_update.pswd);
+        binary_array_secure_free(&master_key);
+        fprintf(stderr, "Failed to generate key from password.\n");
+        return;
+    }
+    binary_array_secure_free(&secure_buffer);
+    master_key.len = KEY_SIZE;
+
+    if (user_verify_master_pswd(*user, master_key.ptr) != 0) {
+        binary_array_secure_free(&master_key);
+        binary_array_secure_free(&session_key);
+        binary_array_secure_free(&credential_data_to_update.pswd);
+        fprintf(stderr, "Invalid master password, repeat.\n");
+        return;
+    }
+
+    /*
+     * Decipher password to storee and cipher it with master key
+     */
+
+    if (decrypt_data(session_key.ptr, session_iv,
+                     credential_data_to_update.pswd,
+                     &credential_data_to_update.pswd)
+        != 0) {
+        binary_array_secure_free(&master_key);
+        binary_array_secure_free(&session_key);
+        binary_array_secure_free(&credential_data_to_update.pswd);
+        handle_errors("Failed to decipher temporarily encrypted memory data.");
+    }
+    binary_array_secure_free(&session_key);
+
+    if (encrypt_data(master_key.ptr, credential_data_to_update.iv,
+                     credential_data_to_update.pswd,
+                     &credential_data_to_update.pswd)
+        != 0) {
+        binary_array_secure_free(&master_key);
+        binary_array_secure_free(&credential_data_to_update.pswd);
+        fprintf(stderr, "Failed to encrypt credential data.\n");
+        return;
+    }
+    binary_array_secure_free(&master_key);
+
+    if (upsert_cred_data(db, &credential_data_to_update) == 0) {
+        printf("Credential updated successfully.\n");
+    } else {
+        fprintf(stderr, "Failed to upsert credential.\n");
+    }
+
+    binary_array_secure_free(&credential_data_to_update.pswd);
+    credential_data_to_update.pswd = binary_array_alloc(sizeof("*****"));
+    memcpy(credential_data_to_update.pswd.ptr, "*****", sizeof("*****"));
+    credential_data_to_update.pswd.len = sizeof("*****") - 1;
+
+    printf("=========\n");
+    printf("%s", cred_data_to_string(&credential_data_to_update));
+}
+
+void handle_update_master_pswd(struct sqlite3* db, user_t* user) {
     int status_code = 0;
 
     status_code = get_user(db, user);

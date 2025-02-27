@@ -31,6 +31,7 @@
 #define CLI_NEW "-n"
 #define CLI_FORCE_NEW "-nf"
 #define CLI_GET "-g"
+#define CLI_UPDATE "-u"
 #define CLI_SET_MASTER_PSWD "-m"
 
 #define CLI_USER "--user"
@@ -41,6 +42,9 @@ struct sqlite3;
 
 void handle_add_new_entry(struct sqlite3* db, user_t* user);
 void handle_retrieve_creddata(struct sqlite3* db, user_t* user);
-void handle_set_master_pswd(struct sqlite3* db, user_t* user);
+void handle_update_creddata(struct sqlite3* db, user_t* user);
+void handle_delete_creddata(struct sqlite3* db, user_t* user);
+
+void handle_update_master_pswd(struct sqlite3* db, user_t* user);
 
 #endif // CLI_H

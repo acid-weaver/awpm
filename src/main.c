@@ -88,13 +88,17 @@ int main(int argc, char* argv[]) {
 
     if (strcmp(argv[1], CLI_NEW) == 0) {
         handle_add_new_entry(db, &user);
-    } else if (strcmp(argv[1], CLI_GET) == 0) {
-        handle_retrieve_creddata(db, &user);
-    } else if (strcmp(argv[1], CLI_SET_MASTER_PSWD) == 0) {
-        handle_set_master_pswd(db, &user);
     } else if (strcmp(argv[1], CLI_FORCE_NEW) == 0) {
         cfg.multiple_accs_per_source = 1;
         handle_add_new_entry(db, &user);
+    } else if (strcmp(argv[1], CLI_GET) == 0) {
+        handle_retrieve_creddata(db, &user);
+    } else if (strcmp(argv[1], CLI_UPDATE) == 0) {
+        handle_update_creddata(db, &user);
+        /*
+         *} else if (strcmp(argv[1], CLI_SET_MASTER_PSWD) == 0) {
+         *  handle_set_master_pswd(db, &user);
+         */
     } else {
         fprintf(stderr, "Unknown parameter: %s\n", argv[1]);
     }

@@ -44,7 +44,7 @@ int initialize_database(sqlite3 **db, struct config cfg) {
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "source TEXT NOT NULL, "
         "login TEXT NOT NULL, "
-        "email TEXT, "
+        "email TEXT NOT NULL, "
         "iv BLOB NOT NULL, "
         "pswd BLOB NOT NULL, "
         "owner INTEGER NOT NULL, "
