@@ -46,8 +46,8 @@ typedef struct {
 int cred_data_populate(sqlite3_stmt* stmt, cred_data_t* credential_data);
 char* cred_data_to_string(const cred_data_t* credential_data);
 int upsert_cred_data(sqlite3* db, const cred_data_t* credential_data);
-int get_cred_data(sqlite3* db, const user_t user, const cred_data_t search_by,
-                  cred_data_t* result);
+int get_cred_data_for_update(sqlite3* db, const user_t user, const int step,
+                             const cred_data_t search_by, cred_data_t* result);
 int get_cred_data_by_source(sqlite3* db, const user_t user, const char* source,
                             cred_data_t** results, int* result_count);
 

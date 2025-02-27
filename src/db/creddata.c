@@ -175,18 +175,22 @@ int upsert_cred_data(sqlite3* db, const cred_data_t* credential_data) {
     return rc == SQLITE_DONE ? SQLITE_OK : rc;
 }
 
-int get_cred_data(sqlite3* db, const user_t user, const cred_data_t search_by,
-                  cred_data_t* result) {
+int get_cred_data_for_update(sqlite3* db, const user_t user, const int step,
+                             const cred_data_t search_by, cred_data_t* result) {
     sqlite3_stmt* stmt;
-    const char* sql_query =
-        "SELECT id, owner, source, login, email, iv, pswd FROM creddata WHERE "
-        "source = ? AND login = ? AND email = ? AND owner = ?;";
-    int rc;
+    char sql_query[256];
+    int rc, parameter_index;
 
     if (db == NULL || user.id < 1 || strcmp(search_by.source, "") == 0) {
         fprintf(stderr, "Invalid input into cred_data_get function.\n");
         return -1;
     }
+
+    snprintf(sql_query, sizeof(sql_query),
+             "SELECT id, owner, source, login, email, iv, pswd FROM creddata "
+             "WHERE owner = ? AND source = ?%s%s",
+             step >= 1 ? " AND login = ?" : "",
+             step == 2 ? " AND email = ?" : "");
 
     rc = sqlite3_prepare_v2(db, sql_query, -1, &stmt, NULL);
     if (rc != SQLITE_OK) {
@@ -194,25 +198,40 @@ int get_cred_data(sqlite3* db, const user_t user, const cred_data_t search_by,
         return -1;
     }
 
-    sqlite3_bind_text(stmt, 1, search_by.source, -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, search_by.login, -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 3, search_by.email, -1, SQLITE_STATIC);
-    sqlite3_bind_int(stmt, 4, user.id);
-
-    if ((rc = sqlite3_step(stmt)) == SQLITE_ROW
-        && cred_data_populate(stmt, result) != 0) {
-        fprintf(stderr,
-                "Failed to parse data from DB into cred_data_t object.\n");
-        sqlite3_finalize(stmt);
-        return -1;
+    parameter_index = 1;
+    sqlite3_bind_int(stmt, parameter_index++, user.id);
+    sqlite3_bind_text(stmt, parameter_index++, search_by.source, -1,
+                      SQLITE_STATIC);
+    if (step >= 1) {
+        sqlite3_bind_text(stmt, parameter_index++, search_by.login, -1,
+                          SQLITE_STATIC);
+    }
+    if (step == 2) {
+        sqlite3_bind_text(stmt, parameter_index++, search_by.email, -1,
+                          SQLITE_STATIC);
     }
 
     rc = sqlite3_step(stmt);
-    if (rc != SQLITE_DONE) {
-        fprintf(stderr, "Error executing query: %s\n", sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        return -1;
+    if (rc == SQLITE_ROW) {
+        if (cred_data_populate(stmt, result) != 0) {
+            fprintf(stderr,
+                    "Failed to parse data from DB into cred_data_t object.\n");
+            sqlite3_finalize(stmt);
+            return -1;
+        }
+
+        // Check for multiple rows
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            sqlite3_finalize(stmt);
+            return 1; // Indicate multiple results
+        }
     }
+
+    // if (rc != SQLITE_DONE) {
+    //     fprintf(stderr, "Error executing query: %s\n", sqlite3_errmsg(db));
+    //     sqlite3_finalize(stmt);
+    //     return -1;
+    // }
 
     sqlite3_finalize(stmt);
     return 0;

@@ -332,7 +332,7 @@ void handle_retrieve_creddata(struct sqlite3* db, user_t* user) {
 }
 
 void handle_update_creddata(struct sqlite3* db, user_t* user) {
-    cred_data_t credential_data_to_update = {0};
+    cred_data_t search_by = {0}, credential_data_to_update = {0};
     binary_array_t secure_buffer = {0}, master_key = {0}, session_key = {0};
     unsigned char session_iv[IV_SIZE];
     int status_code = 0;
@@ -357,30 +357,52 @@ void handle_update_creddata(struct sqlite3* db, user_t* user) {
      * GET DATA TO EDIT
      */
 
-    if (std_input("source", "", credential_data_to_update.source,
-                  INPUT_BUFF_SIZE)
-        != 0) {
+    if (std_input("source", "", search_by.source, INPUT_BUFF_SIZE) != 0) {
         fprintf(stderr, "Error reading source.\n");
         return;
     }
 
-    if (std_input("login", "", credential_data_to_update.login, INPUT_BUFF_SIZE)
-        != 0) {
-        fprintf(stderr, "Error reading login.\n");
-        return;
-    }
+    status_code = get_cred_data_for_update(db, *user, 0, search_by,
+                                           &credential_data_to_update);
 
-    if (std_input("e-mail", "", credential_data_to_update.email,
-                  INPUT_BUFF_SIZE)
-        != 0) {
-        fprintf(stderr, "Error reading e-mail.\n");
-        return;
-    }
-
-    if (get_cred_data(db, *user, credential_data_to_update,
-                      &credential_data_to_update)
-        != 0) {
+    if (status_code < 0) {
         fprintf(stderr, "Failed to retrieve credential data.\n");
+        return;
+    }
+
+    if (status_code == 1) {
+        if (std_input("login", "", search_by.login, INPUT_BUFF_SIZE) != 0) {
+            fprintf(stderr, "Error reading login.\n");
+            return;
+        }
+
+        status_code = get_cred_data_for_update(db, *user, 1, search_by,
+                                               &credential_data_to_update);
+
+        if (status_code < 0) {
+            fprintf(stderr, "Failed to retrieve credential data.\n");
+            return;
+        }
+    }
+
+    if (status_code == 1) {
+        if (std_input("e-mail", "", search_by.email, INPUT_BUFF_SIZE) != 0) {
+            fprintf(stderr, "Error reading e-mail.\n");
+            return;
+        }
+
+        status_code = get_cred_data_for_update(db, *user, 2, search_by,
+                                               &credential_data_to_update);
+        if (status_code < 0) {
+            fprintf(stderr, "Failed to retrieve credential data.\n");
+            return;
+        }
+    }
+
+    if (status_code == 1) {
+        fprintf(stderr,
+                "Critical database error. Multiple entries per owner, source, "
+                "login and email.\n");
         return;
     }
 
@@ -393,23 +415,24 @@ void handle_update_creddata(struct sqlite3* db, user_t* user) {
      * GET NEW VALUES
      */
 
-    if (std_input("Source", "", credential_data_to_update.source,
+    if (std_input("new source", "", credential_data_to_update.source,
                   INPUT_BUFF_SIZE)
         != 0) {
-        fprintf(stderr, "Error at Source input.\n");
+        fprintf(stderr, "Error at source input.\n");
         return;
     }
 
-    if (std_input("Login", "", credential_data_to_update.login, INPUT_BUFF_SIZE)
+    if (std_input("new login", "", credential_data_to_update.login,
+                  INPUT_BUFF_SIZE)
         != 0) {
-        fprintf(stderr, "Error at Source input.\n");
+        fprintf(stderr, "Error at login input.\n");
         return;
     }
 
-    if (std_input("E-mail", "", credential_data_to_update.email,
+    if (std_input("new e-mail", "", credential_data_to_update.email,
                   INPUT_BUFF_SIZE)
         != 0) {
-        fprintf(stderr, "Error at Source input.\n");
+        fprintf(stderr, "Error at e-mail input.\n");
         return;
     }
 
