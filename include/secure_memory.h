@@ -28,14 +28,13 @@
 #ifndef SECURE_MEMORY_H
 #define SECURE_MEMORY_H
 
-#include <stddef.h>  // For size_t
+#include <stddef.h> // For size_t
 
 #include "memory.h"
 
 /* General memory managment helpers */
 void* secure_malloc(size_t size);
 void secure_free(void* ptr, size_t size);
-size_t get_securely_allocated();
 
 /* Dynamic string related */
 dynamic_string_t dynamic_string_secure_alloc(size_t size);
@@ -45,4 +44,4 @@ void dynamic_string_secure_free(dynamic_string_t* dyn_str);
 binary_array_t binary_array_secure_alloc(size_t size);
 void binary_array_secure_free(binary_array_t* bin_arr);
 
-#endif  // SECURE_MEMORY_H
+#endif // SECURE_MEMORY_H

@@ -412,6 +412,16 @@ void handle_update_creddata(struct sqlite3* db, user_t* user) {
     }
 
     /*
+     * SHOW ACTUAL CREDENTIAL DATA ENTRY WE WILL UPDATE
+     */
+
+    binary_array_free(&credential_data_to_update.pswd);
+    credential_data_to_update.pswd = string_to_binary_array("*****");
+    printf("=========\n");
+    printf("%s", cred_data_to_string(&credential_data_to_update));
+    printf("=========\n");
+
+    /*
      * GET NEW VALUES
      */
 
@@ -547,13 +557,12 @@ void handle_update_creddata(struct sqlite3* db, user_t* user) {
         fprintf(stderr, "Failed to upsert credential.\n");
     }
 
-    binary_array_secure_free(&credential_data_to_update.pswd);
-    credential_data_to_update.pswd = binary_array_alloc(sizeof("*****"));
-    memcpy(credential_data_to_update.pswd.ptr, "*****", sizeof("*****"));
-    credential_data_to_update.pswd.len = sizeof("*****") - 1;
+    binary_array_free(&credential_data_to_update.pswd);
+    credential_data_to_update.pswd = string_to_binary_array("*****");
 
     printf("=========\n");
     printf("%s", cred_data_to_string(&credential_data_to_update));
+    printf("=========\n");
 }
 
 void handle_update_master_pswd(struct sqlite3* db, user_t* user) {

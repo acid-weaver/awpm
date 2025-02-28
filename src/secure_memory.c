@@ -37,32 +37,24 @@
  * GENERAL MEMORY MANAGMENT
  */
 
-static size_t securely_allocated = 0;
-
 void* secure_malloc(size_t size) {
     void* ptr = safe_malloc(size);
 
-    if(mlock(ptr, size) != 0) {
+    if (mlock(ptr, size) != 0) {
         perror("mlock failed");
-        safe_free(ptr, size);
+        safe_free(ptr);
         exit(EXIT_FAILURE);
     }
 
-    securely_allocated += size;
     return ptr;
 }
 
 void secure_free(void* ptr, size_t size) {
-    if(ptr != NULL) {
+    if (ptr != NULL) {
         explicit_bzero(ptr, size);
         munlock(ptr, size);
-        securely_allocated -= size;
-        safe_free(ptr, size);
+        safe_free(ptr);
     }
-}
-
-size_t get_securely_allocated() {
-    return securely_allocated;
 }
 
 /*
@@ -81,7 +73,7 @@ dynamic_string_t dynamic_string_secure_alloc(size_t size) {
 }
 
 void dynamic_string_secure_free(dynamic_string_t* sec_dyn_str) {
-    if(sec_dyn_str != NULL) {
+    if (sec_dyn_str != NULL) {
         secure_free(sec_dyn_str->ptr, sec_dyn_str->size);
         sec_dyn_str->ptr  = NULL;
         sec_dyn_str->size = 0;
@@ -105,7 +97,7 @@ binary_array_t binary_array_secure_alloc(size_t size) {
 }
 
 void binary_array_secure_free(binary_array_t* sec_bin_arr) {
-    if(sec_bin_arr != NULL) {
+    if (sec_bin_arr != NULL) {
         secure_free(sec_bin_arr->ptr, sec_bin_arr->size);
         sec_bin_arr->ptr  = NULL;
         sec_bin_arr->size = 0;

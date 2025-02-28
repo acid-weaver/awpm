@@ -35,8 +35,6 @@
  * GENERAL MEMORY MANAGMENT
  */
 
-static size_t dynamically_allocated = 0;
-
 void* safe_malloc(size_t size) {
     void* ptr = malloc(size);
 
@@ -45,19 +43,13 @@ void* safe_malloc(size_t size) {
         exit(EXIT_FAILURE);
     }
 
-    dynamically_allocated += size;
     return ptr;
 }
 
-void safe_free(void* ptr, size_t size) {
+void safe_free(void* ptr) {
     if (ptr != NULL) {
-        dynamically_allocated -= size;
         free(ptr);
     }
-}
-
-size_t get_dynamically_allocated() {
-    return dynamically_allocated;
 }
 
 /*
@@ -74,7 +66,7 @@ dynamic_string_t dynamic_string_alloc(size_t size) {
 
 void dynamic_string_free(dynamic_string_t* dyn_str) {
     if (dyn_str != NULL) { // ptr not NULL check in safe_free
-        safe_free(dyn_str->ptr, dyn_str->size);
+        safe_free(dyn_str->ptr);
         dyn_str->ptr  = NULL;
         dyn_str->size = 0;
     }
@@ -123,7 +115,7 @@ binary_array_t binary_array_alloc(size_t size) {
 
 void binary_array_free(binary_array_t* bin_arr) {
     if (bin_arr != NULL) { // ptr not NULL check in safe_free
-        safe_free(bin_arr->ptr, bin_arr->size);
+        safe_free(bin_arr->ptr);
         bin_arr->ptr  = NULL;
         bin_arr->size = 0;
         bin_arr->len  = 0;
@@ -144,6 +136,16 @@ int binary_array_copy(binary_array_t* dst, binary_array_t* src) {
     dst->len  = src->len;
 
     return 0;
+}
+
+binary_array_t string_to_binary_array(const char* string) {
+    binary_array_t result = {0};
+
+    result = binary_array_alloc(sizeof(string));
+    memcpy(result.ptr, string, result.size);
+    result.len = strlen(string);
+
+    return result;
 }
 
 char* binary_array_to_string(const binary_array_t* bin_arr) {

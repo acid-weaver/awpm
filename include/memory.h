@@ -42,7 +42,7 @@ typedef struct {
 
 /* General memory managment helpers */
 void* safe_malloc(size_t size);
-void safe_free(void* ptr, size_t size);
+void safe_free(void* ptr);
 size_t get_dynamically_allocated();
 
 /* Dynamic string related */
@@ -55,6 +55,7 @@ binary_array_t dynamic_string_to_binary_array(dynamic_string_t* dyn_str);
 binary_array_t binary_array_alloc(size_t size);
 void binary_array_free(binary_array_t* bin_arr);
 int binary_array_copy(binary_array_t* dst, binary_array_t* src);
+binary_array_t string_to_binary_array(const char* string);
 char* binary_array_to_string(const binary_array_t* bin_arr);
 
 #endif // MEMORY_H
