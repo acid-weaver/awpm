@@ -50,5 +50,7 @@ int get_cred_data_for_update(sqlite3* db, const user_t user, const int step,
                              const cred_data_t search_by, cred_data_t* result);
 int get_cred_data_by_source(sqlite3* db, const user_t user, const char* source,
                             cred_data_t** results, int* result_count);
+int delete_cred_data(sqlite3* db, const user_t user,
+                     const cred_data_t to_delete);
 
 #endif // CREDDATA_H

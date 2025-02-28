@@ -297,3 +297,35 @@ int get_cred_data_by_source(sqlite3* db, const user_t user, const char* source,
     *result_count = temp_count;
     return 0;
 }
+
+int delete_cred_data(sqlite3* db, const user_t user,
+                     const cred_data_t to_delete) {
+    const char* sql_query = "DELETE FROM creddata WHERE id = ? AND owner = ?;";
+    sqlite3_stmt* stmt;
+    int rc;
+
+    if (db == NULL || user.id < 1 || to_delete.id < 1) {
+        fprintf(stderr, "Invalid input into delete_cred_data function.\n");
+        return -1;
+    }
+
+    rc = sqlite3_prepare_v2(db, sql_query, -1, &stmt, NULL);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare query: %s\n", sqlite3_errmsg(db));
+        return -1;
+    }
+
+    sqlite3_bind_int(stmt, 1, to_delete.id);
+    sqlite3_bind_int(stmt, 2, user.id);
+
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error executing delete query: %s\n",
+                sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return -1;
+    }
+
+    sqlite3_finalize(stmt);
+    return 0;
+}

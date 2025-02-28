@@ -32,6 +32,7 @@
 #define CLI_FORCE_NEW "-nf"
 #define CLI_GET "-g"
 #define CLI_UPDATE "-u"
+#define CLI_DELETE "-d"
 #define CLI_SET_MASTER_PSWD "-m"
 
 #define CLI_USER "--user"

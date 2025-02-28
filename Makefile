@@ -1,6 +1,6 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -Iinclude -Iinclude/db -g
+CFLAGS = -Wall -Wextra -Iinclude -Iinclude/db -Iinclude/cli -g
 LDFLAGS = -lsqlite3 -lssl -lcrypto
 
 # Directories
