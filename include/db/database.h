@@ -7,7 +7,7 @@
  * This file declares functions to initialize the SQLite database.
  */
 
-/* Copyright (C) 2024  Acid Weaver <acid.weaver@gmail.com>
+/* Copyright (C) 2024-2025  Acid Weaver <acid.weaver@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -32,4 +32,4 @@
 
 int initialize_database(sqlite3** db, struct config cfg);
 
-#endif  // DATABASE_H
+#endif // DATABASE_H

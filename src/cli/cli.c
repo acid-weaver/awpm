@@ -7,7 +7,7 @@
  * Implements the command-line interface functions declared in cli.h.
  */
 
-/* Copyright (C) 2024  Acid Weaver <acid.weaver@gmail.com>
+/* Copyright (C) 2024-2025  Acid Weaver <acid.weaver@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,9 +25,7 @@
 
 #include "cli/cli.h"
 
-#include <openssl/evp.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "db/creddata.h"
