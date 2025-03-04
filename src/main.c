@@ -38,7 +38,7 @@
 struct config cfg = {
     .debug                    = 0,
     .multiple_accs_per_source = 0,
-    .db_path                  = "awpm.db",
+    .db_path                  = "/var/local/awpm/awpm.db",
 };
 
 int main(int argc, char* argv[]) {

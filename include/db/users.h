@@ -32,6 +32,12 @@
 #include "memory.h"
 #include "utils.h"
 
+#define ACCESS_GROUP "awpm"
+#define USER_REGISTERED "Current user successfully registered to use AWPM.\n"
+#define MSG_APPLY_GROUP_MEMBERSHIP                               \
+    "To apply group membership shell session will be reloaded. " \
+    "Repeat command after again.\n"
+
 typedef struct {
     int id; // Primary key
     char username[INPUT_BUFF_SIZE];
@@ -41,7 +47,6 @@ typedef struct {
     binary_array_t hash;
 } user_t;
 
-const char* get_current_username();
 user_t user_init();
 int user_set_master_pswd(user_t* user);
 int user_verify_master_pswd(const user_t user, const unsigned char* master_key);

@@ -29,6 +29,27 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+local: $(TARGET)
+	@echo "Installation into local folders."
+	getent group awpm || sudo groupadd awpm
+	@echo ""
+	@echo "DB into /var/local/awpm"
+	sudo mkdir -p /var/local/awpm
+	sudo chown root:awpm /var/local/awpm
+	sudo chmod 2770 /var/local/awpm
+	@echo ""
+	@echo "Binary file into /usr/local/awpm"
+	sudo install -m 755 -o root -g awpm $(TARGET) /usr/local/bin
+
+uninstall:
+	sudo rm -f /usr/local/bin/$(TARGET)
+	sudo rm -f /usr/bin/$(TARGET)
+
+dd:
+	sudo rm -f /usr/local/bin/$(TARGET)
+	sudo rm -rf /var/local/awpm
+	sudo groupdel awpm
+
 # Clean rule
 clean:
 	rm -rf $(OBJDIR) $(TARGET)

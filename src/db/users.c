@@ -25,6 +25,7 @@
 
 #include "db/users.h"
 
+#include <grp.h>
 #include <openssl/rand.h>
 #include <pwd.h>
 #include <sqlite3.h>
@@ -43,6 +44,51 @@ const char* get_current_username() {
     return pw ? pw->pw_name : NULL;
 }
 
+int is_user_in_group(const char* user, const char* group) {
+    struct group* grp = getgrnam(group);
+
+    if (!grp) {
+        fprintf(stderr, "Group '%s' not found.\n", group);
+        return -1; // Group does not exist
+    }
+
+    for (char** members = grp->gr_mem; *members; members++) {
+        if (strcmp(*members, user) == 0) {
+            return 1; // User is already in group
+        }
+    }
+
+    return 0; // User is not in group
+}
+
+int add_user_to_group(const char* username, const char* group) {
+    char command[INPUT_BUFF_SIZE * 3];
+
+    snprintf(command, sizeof(command), "sudo usermod -aG %s %s", group,
+             username);
+    if (system(command) == -1) {
+        perror("Failed to execute command");
+        return -1;
+    }
+
+    printf("User %s added to group %s.\n", username, group);
+    return 0;
+}
+
+int apply_group_membership(const char* group) {
+    char command[INPUT_BUFF_SIZE * 2];
+
+    printf(MSG_APPLY_GROUP_MEMBERSHIP);
+    snprintf(command, sizeof(command), "newgrp %s", group);
+
+    if (system(command) == -1) {
+        perror("Failed to execute command");
+        return -1;
+    }
+
+    return 0;
+}
+
 user_t user_init() {
     user_t user = {
         .id          = -1,
@@ -58,6 +104,11 @@ user_t user_init() {
     if (username != NULL) {
         strncpy(user.username, username, sizeof(user.username) - 1);
         user.username[sizeof(user.username) - 1] = '\0'; // Null-terminate
+
+        if (is_user_in_group(username, ACCESS_GROUP) == 0) {
+            add_user_to_group(username, ACCESS_GROUP);
+            apply_group_membership(ACCESS_GROUP);
+        }
     } else {
         fprintf(stderr,
                 "Error: Unable to determine current user's username.\n");
