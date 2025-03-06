@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cli/cli.h"
+#include "cli.h"
 #include "db/database.h"
 #include "db/users.h"
 #include "utils.h"
@@ -38,7 +38,7 @@
 struct config cfg = {
     .debug                    = 0,
     .multiple_accs_per_source = 0,
-    .db_path                  = "/var/local/awpm/awpm.db",
+    .db_path                  = "awpm.db",
 };
 
 int main(int argc, char* argv[]) {
@@ -87,16 +87,16 @@ int main(int argc, char* argv[]) {
     initialize_database(&db, cfg);
 
     if (strcmp(argv[1], CLI_NEW) == 0) {
-        handle_add_new_entry(db, &user);
+        handle_add(db, &user);
     } else if (strcmp(argv[1], CLI_FORCE_NEW) == 0) {
         cfg.multiple_accs_per_source = 1;
-        handle_add_new_entry(db, &user);
+        handle_add(db, &user);
     } else if (strcmp(argv[1], CLI_GET) == 0) {
-        handle_retrieve_creddata(db, &user);
+        handle_get(db, &user);
     } else if (strcmp(argv[1], CLI_UPDATE) == 0) {
-        handle_update_creddata(db, &user);
+        handle_update(db, &user);
     } else if (strcmp(argv[1], CLI_DELETE) == 0) {
-        handle_delete_creddata(db, &user);
+        handle_delete(db, &user);
         /*
          *} else if (strcmp(argv[1], CLI_SET_MASTER_PSWD) == 0) {
          *  handle_set_master_pswd(db, &user);

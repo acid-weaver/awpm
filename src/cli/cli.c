@@ -23,7 +23,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cli/cli.h"
+#include "cli.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -35,7 +35,7 @@
 #include "secure_memory.h"
 #include "utils.h"
 
-void handle_add_new_entry(struct sqlite3* db, user_t* user) {
+void handle_add(struct sqlite3* db, user_t* user) {
     cred_data_t credential_data =
                     {
                         .id     = -1,
@@ -231,7 +231,7 @@ void handle_add_new_entry(struct sqlite3* db, user_t* user) {
     binary_array_secure_free(&credential_data.pswd);
 }
 
-void handle_retrieve_creddata(struct sqlite3* db, user_t* user) {
+void handle_get(struct sqlite3* db, user_t* user) {
     cred_data_t* results = NULL;
 
     binary_array_t secure_buffer = {0}, master_key = {0};
@@ -329,7 +329,7 @@ void handle_retrieve_creddata(struct sqlite3* db, user_t* user) {
     binary_array_secure_free(&master_key);
 }
 
-void handle_update_creddata(struct sqlite3* db, user_t* user) {
+void handle_update(struct sqlite3* db, user_t* user) {
     cred_data_t search_by = {0}, credential_data_to_update = {0};
     binary_array_t secure_buffer = {0}, master_key = {0}, session_key = {0};
     unsigned char session_iv[IV_SIZE];
@@ -563,8 +563,9 @@ void handle_update_creddata(struct sqlite3* db, user_t* user) {
     printf("=========\n");
 }
 
-void handle_delete_creddata(struct sqlite3* db, user_t* user) {
+void handle_delete(struct sqlite3* db, user_t* user) {
     cred_data_t search_by = {0}, credential_data_to_delete = {0};
+    binary_array_t secure_buffer = {0}, master_key = {0};
     char confirmation[INPUT_BUFF_SIZE];
     int status_code = 0;
 
@@ -585,7 +586,46 @@ void handle_delete_creddata(struct sqlite3* db, user_t* user) {
     }
 
     /*
-     * GET DATA TO EDIT
+     * Verify master password to ensure user have apopriate access rights
+     */
+
+    secure_buffer = binary_array_secure_alloc(INPUT_BUFF_SIZE);
+    if (secure_input("master password", "", (char*)secure_buffer.ptr,
+                     INPUT_BUFF_SIZE)
+        != 0) {
+        binary_array_secure_free(&secure_buffer);
+        fprintf(stderr, "Error reading decryption password.\n");
+        return;
+    }
+    secure_buffer.len = strlen((char*)secure_buffer.ptr);
+
+    if (secure_buffer.len < 1) {
+        binary_array_secure_free(&secure_buffer);
+        fprintf(stderr, "Entered password length less that minimum.\n");
+        return;
+    }
+
+    master_key = binary_array_secure_alloc(KEY_SIZE);
+    if (generate_key_from_password(user->salt, (char*)secure_buffer.ptr,
+                                   master_key.ptr)
+        != 0) {
+        binary_array_secure_free(&master_key);
+        binary_array_secure_free(&secure_buffer);
+        fprintf(stderr, "Failed to generate key from password.\n");
+        return;
+    }
+    binary_array_secure_free(&secure_buffer);
+    master_key.len = KEY_SIZE;
+
+    if (user_verify_master_pswd(*user, master_key.ptr) != 0) {
+        binary_array_secure_free(&master_key);
+        fprintf(stderr, "Failed to verify master password.\n");
+        return;
+    }
+    binary_array_secure_free(&master_key);
+
+    /*
+     * Get data to delete
      */
 
     if (std_input("source", "", search_by.source, INPUT_BUFF_SIZE) != 0) {

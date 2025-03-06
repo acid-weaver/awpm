@@ -27,9 +27,8 @@
 #ifndef CLI_H
 #define CLI_H
 
-// CLI parameters
 #define CLI_NEW "-n"
-#define CLI_FORCE_NEW "-nf"
+#define CLI_FORCE_NEW "-fn"
 #define CLI_GET "-g"
 #define CLI_UPDATE "-u"
 #define CLI_DELETE "-d"
@@ -41,10 +40,10 @@
 #include "db/users.h"
 struct sqlite3;
 
-void handle_add_new_entry(struct sqlite3* db, user_t* user);
-void handle_retrieve_creddata(struct sqlite3* db, user_t* user);
-void handle_update_creddata(struct sqlite3* db, user_t* user);
-void handle_delete_creddata(struct sqlite3* db, user_t* user);
+void handle_add(struct sqlite3* db, user_t* user);
+void handle_get(struct sqlite3* db, user_t* user);
+void handle_update(struct sqlite3* db, user_t* user);
+void handle_delete(struct sqlite3* db, user_t* user);
 
 void handle_update_master_pswd(struct sqlite3* db, user_t* user);
 
