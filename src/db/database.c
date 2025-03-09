@@ -23,10 +23,10 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "db/database.h"
-
 #include <sqlite3.h>
 #include <stdio.h>
+
+#include "db.h"
 
 int initialize_database(sqlite3 **db, struct config cfg) {
     const char *sql_create_users_table =

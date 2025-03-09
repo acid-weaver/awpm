@@ -23,14 +23,12 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "db/creddata.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "db/users.h"
-#include "memory.h"
+#include "db.h"
+#include "mem.h"
 #include "utils.h"
 
 int cred_data_populate(sqlite3_stmt* stmt, cred_data_t* credential_data) {

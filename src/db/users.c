@@ -23,8 +23,6 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "db/users.h"
-
 #include <grp.h>
 #include <openssl/rand.h>
 #include <pwd.h>
@@ -34,9 +32,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "db.h"
 #include "encryption.h"
-#include "memory.h"
-#include "secure_memory.h"
+#include "mem.h"
 #include "utils.h"
 
 const char* get_current_username() {

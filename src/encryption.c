@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "memory.h"
+#include "mem.h"
 #include "utils.h"
 
 int generate_random_bytes(unsigned char* ptr, size_t size) {
