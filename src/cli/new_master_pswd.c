@@ -1,10 +1,10 @@
 /**
- * \file            database.h
- * \brief           Database initialization utilities
+ * \file            cli.c
+ * \brief           Implementation of command-line interface utilities
  * \author          Acid Weaver
  * \date            2024-12-23
  * \details
- * This file declares functions to initialize the SQLite database.
+ * Implements the command-line interface functions declared in cli.h.
  */
 
 /* Copyright (C) 2024-2025  Acid Weaver <acid.weaver@gmail.com>
@@ -23,13 +23,21 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef DATABASE_H
-#define DATABASE_H
+#include <stdio.h>
+#include <string.h>
 
-#include <sqlite3.h>
-
+#include "cli.h"
+#include "db.h"
+#include "encryption.h"
+#include "mem.h"
 #include "utils.h"
 
-int initialize_database(sqlite3** db, struct config cfg);
+void handle_new_master_pswd(struct sqlite3* db, user_t* user) {
+    int status_code = 0;
 
-#endif // DATABASE_H
+    status_code = get_user(db, user);
+    if (status_code != 0) {
+        fprintf(stderr, "Failed to authenticate user.\n");
+        return;
+    }
+}

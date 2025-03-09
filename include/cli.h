@@ -37,14 +37,14 @@
 #define CLI_USER "--user"
 #define CLI_DEBUG_MODE "--debug"
 
-#include "db/users.h"
+#include "db.h"
 struct sqlite3;
 
-void handle_add(struct sqlite3* db, user_t* user);
+void handle_new(struct sqlite3* db, user_t* user);
 void handle_get(struct sqlite3* db, user_t* user);
 void handle_update(struct sqlite3* db, user_t* user);
 void handle_delete(struct sqlite3* db, user_t* user);
 
-void handle_update_master_pswd(struct sqlite3* db, user_t* user);
+void handle_new_master_pswd(struct sqlite3* db, user_t* user);
 
 #endif // CLI_H

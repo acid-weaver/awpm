@@ -31,8 +31,7 @@
 #include <string.h>
 
 #include "cli.h"
-#include "db/database.h"
-#include "db/users.h"
+#include "db.h"
 #include "utils.h"
 
 struct config cfg = {
@@ -87,10 +86,10 @@ int main(int argc, char* argv[]) {
     initialize_database(&db, cfg);
 
     if (strcmp(argv[1], CLI_NEW) == 0) {
-        handle_add(db, &user);
+        handle_new(db, &user);
     } else if (strcmp(argv[1], CLI_FORCE_NEW) == 0) {
         cfg.multiple_accs_per_source = 1;
-        handle_add(db, &user);
+        handle_new(db, &user);
     } else if (strcmp(argv[1], CLI_GET) == 0) {
         handle_get(db, &user);
     } else if (strcmp(argv[1], CLI_UPDATE) == 0) {

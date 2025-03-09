@@ -27,7 +27,7 @@
 #ifndef ENCRYPTION_H
 #define ENCRYPTION_H
 
-#include "memory.h"
+#include "mem.h"
 
 int generate_random_bytes(unsigned char* ptr, size_t size);
 int generate_hash(const void* input, const size_t input_len,
