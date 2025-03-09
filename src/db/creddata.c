@@ -4,7 +4,7 @@
  * \author          Acid Weaver
  * \date            2024-12-23
  * \details
- * Implements the credential management functions declared in creddata.h.
+ * Implements the credential management functions declared in db.h.
  */
 
 /* Copyright (C) 2024-2025  Acid Weaver <acid.weaver@gmail.com>

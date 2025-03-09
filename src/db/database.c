@@ -4,7 +4,7 @@
  * \author          Acid Weaver
  * \date            2024-12-23
  * \details
- * Implements the database initialization functions declared in database.h.
+ * Implements the database initialization functions declared in db.h.
  */
 
 /* Copyright (C) 2024-2025  Acid Weaver <acid.weaver@gmail.com>
@@ -28,7 +28,7 @@
 
 #include "db.h"
 
-int initialize_database(sqlite3 **db, struct config cfg) {
+int initialize_database(sqlite3 **db) {
     const char *sql_create_users_table =
         "CREATE TABLE IF NOT EXISTS users ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "

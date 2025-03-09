@@ -4,7 +4,8 @@
  * \author          Acid Weaver
  * \date            2024-12-23
  * \details
- * This file declares functions to operate with the SQLite database.
+ * This file declares functions and structures to operate with data and SQLite
+ * database.
  */
 
 /* Copyright (C) 2024-2025  Acid Weaver <acid.weaver@gmail.com>
@@ -60,7 +61,7 @@ typedef struct {
  * General
  */
 
-int initialize_database(sqlite3** db, struct config cfg);
+int initialize_database(sqlite3** db);
 
 /*
  * User related

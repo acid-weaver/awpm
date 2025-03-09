@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
 
     printf("Greetings, %s!\n", user.username);
 
-    initialize_database(&db, cfg);
+    initialize_database(&db);
 
     if (strcmp(argv[1], CLI_NEW) == 0) {
         handle_new(db, &user);

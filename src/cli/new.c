@@ -1,10 +1,10 @@
 /**
- * \file            cli.c
+ * \file            new.c
  * \brief           Implementation of command-line interface utilities
  * \author          Acid Weaver
  * \date            2024-12-23
  * \details
- * Implements the command-line interface functions declared in cli.h.
+ * Implements the command-line interface function handle_new declared in cli.h.
  */
 
 /* Copyright (C) 2024-2025  Acid Weaver <acid.weaver@gmail.com>
