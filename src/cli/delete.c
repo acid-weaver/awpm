@@ -103,8 +103,8 @@ void handle_delete(struct sqlite3* db, user_t* user) {
         return;
     }
 
-    status_code = get_cred_data_for_update(db, *user, 0, search_by,
-                                           &credential_data_to_delete);
+    status_code = get_cred_data_by_step(db, *user, 0, search_by,
+                                        &credential_data_to_delete);
 
     if (status_code < 0) {
         fprintf(stderr, "Failed to retrieve credential data.\n");
@@ -117,8 +117,8 @@ void handle_delete(struct sqlite3* db, user_t* user) {
             return;
         }
 
-        status_code = get_cred_data_for_update(db, *user, 1, search_by,
-                                               &credential_data_to_delete);
+        status_code = get_cred_data_by_step(db, *user, 1, search_by,
+                                            &credential_data_to_delete);
 
         if (status_code < 0) {
             fprintf(stderr, "Failed to retrieve credential data.\n");
@@ -132,8 +132,8 @@ void handle_delete(struct sqlite3* db, user_t* user) {
             return;
         }
 
-        status_code = get_cred_data_for_update(db, *user, 2, search_by,
-                                               &credential_data_to_delete);
+        status_code = get_cred_data_by_step(db, *user, 2, search_by,
+                                            &credential_data_to_delete);
         if (status_code < 0) {
             fprintf(stderr, "Failed to retrieve credential data.\n");
             return;

@@ -173,14 +173,75 @@ int upsert_cred_data(sqlite3* db, const cred_data_t* credential_data) {
     return rc == SQLITE_DONE ? SQLITE_OK : rc;
 }
 
-int get_cred_data_for_update(sqlite3* db, const user_t user, const int step,
-                             const cred_data_t search_by, cred_data_t* result) {
+int get_all_cred_data(sqlite3* db, const user_t user, cred_data_t** results,
+                      int* result_count) {
+    cred_data_t* temp_results = NULL;
+    sqlite3_stmt* stmt;
+
+    const char* sql_query =
+        "SELECT id, owner, source, login, email, iv, pswd FROM creddata WHERE "
+        "owner = ?;";
+    int rc, temp_count = 0;
+
+    if (db == NULL || user.id < 1 || result_count == NULL) {
+        fprintf(stderr,
+                "Invalid input into cred_data_get_by_source function.\n");
+        return -1;
+    }
+
+    rc = sqlite3_prepare_v2(db, sql_query, -1, &stmt, NULL);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare query: %s\n", sqlite3_errmsg(db));
+        return -1;
+    }
+
+    sqlite3_bind_int(stmt, 1, user.id);
+
+    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+        cred_data_t current_row_result = {0};
+
+        if (cred_data_populate(stmt, &current_row_result) != 0) {
+            fprintf(stderr,
+                    "Failed to parse data from DB into cred_data_t object.\n");
+            return -1;
+        }
+
+        // Add the result to the list
+        temp_results =
+            realloc(temp_results, (temp_count + 1) * sizeof(cred_data_t));
+        if (temp_results == NULL) {
+            fprintf(stderr, "Memory allocation failed.\n");
+            free(temp_results);
+            sqlite3_finalize(stmt);
+            return -1;
+        }
+
+        temp_results[temp_count] = current_row_result;
+        temp_count++;
+    }
+
+    if (rc != SQLITE_DONE) {
+        fprintf(stderr, "Error executing query: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return -1;
+    }
+
+    sqlite3_finalize(stmt);
+
+    // Return results
+    *results      = temp_results;
+    *result_count = temp_count;
+    return 0;
+}
+
+int get_cred_data_by_step(sqlite3* db, const user_t user, const int step,
+                          const cred_data_t search_by, cred_data_t* result) {
     sqlite3_stmt* stmt;
     char sql_query[256];
     int rc, parameter_index;
 
     if (db == NULL || user.id < 1 || strcmp(search_by.source, "") == 0) {
-        fprintf(stderr, "Invalid input into cred_data_get function.\n");
+        fprintf(stderr, "Invalid input into get_cred_data_by_step function.\n");
         return -1;
     }
 

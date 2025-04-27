@@ -61,8 +61,15 @@ void handle_get(struct sqlite3* db, user_t* user) {
         return;
     }
 
-    if (get_cred_data_by_source(db, *user, source, &results, &result_count)
-        != 0) {
+    if (strlen(source) > 0
+        && get_cred_data_by_source(db, *user, source, &results, &result_count)
+               != 0) {
+        fprintf(stderr, "Failed to retrieve credential data.\n");
+        return;
+    }
+
+    if (strlen(source) == 0
+        && get_all_cred_data(db, *user, &results, &result_count) != 0) {
         fprintf(stderr, "Failed to retrieve credential data.\n");
         return;
     }
