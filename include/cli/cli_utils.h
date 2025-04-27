@@ -1,11 +1,10 @@
 /**
- * \file            cli.h
+ * \file            cli/cli_utils.h
  * \brief           Command-line interface utilities
  * \author          Acid Weaver
- * \date            2024-12-23
+ * \date            2025-04-27
  * \details
- * Declares functions for handling command-line interactions, including
- * parsing arguments and managing user input.
+ * Declares functions for implementation CLI.
  */
 
 /* Copyright (C) 2024-2025  Acid Weaver <acid.weaver@gmail.com>
@@ -24,28 +23,15 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef CLI_H
-#define CLI_H
-
-#define CLI_NEW "add"
-#define CLI_FORCE_NEW "add -f"
-#define CLI_GET "get"
-#define CLI_SHOW_ALL "show all"
-#define CLI_UPDATE "update"
-#define CLI_DELETE "delete"
-#define CLI_SET_MASTER_PSWD "-m"
-
-#define CLI_USER "--user"
-#define CLI_DEBUG_MODE "--debug"
+#ifndef CLI_UTILS_H
+#define CLI_UTILS_H
 
 #include "db.h"
-struct sqlite3;
 
-void handle_new(struct sqlite3* db, user_t* user);
-void handle_get(struct sqlite3* db, user_t* user);
-void handle_update(struct sqlite3* db, user_t* user);
-void handle_delete(struct sqlite3* db, user_t* user);
+int verify_master_pswd(user_t user, binary_array_t* master_key);
 
-void handle_new_master_pswd(struct sqlite3* db, user_t* user);
+void display_decrypted_cred_data(cred_data_t* results, int result_count,
+                                 binary_array_t* master_key);
+void display_cred_data(cred_data_t* results, int result_count);
 
-#endif // CLI_H
+#endif // CLI_UTILS_H

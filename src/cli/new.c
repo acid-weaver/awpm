@@ -1,5 +1,5 @@
 /**
- * \file            new.c
+ * \file            cli/new.c
  * \brief           Implementation of command-line interface utilities
  * \author          Acid Weaver
  * \date            2024-12-23
@@ -187,7 +187,7 @@ void handle_new(struct sqlite3* db, user_t* user) {
     binary_array_secure_free(&secure_buffer);
     master_key.len = KEY_SIZE;
 
-    if (user_verify_master_pswd(*user, master_key.ptr) != 0) {
+    if (user_verify_master_key(*user, master_key.ptr) != 0) {
         binary_array_secure_free(&master_key);
         binary_array_secure_free(&session_key);
         binary_array_secure_free(&credential_data.pswd);

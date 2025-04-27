@@ -262,8 +262,7 @@ int user_set_master_pswd(user_t* user) {
     return 0;
 }
 
-int user_verify_master_pswd(const user_t user,
-                            const unsigned char* master_key) {
+int user_verify_master_key(const user_t user, const unsigned char* master_key) {
     binary_array_t random_bytes = {0}, hash = {0};
 
     if (master_key == NULL) {

@@ -1,5 +1,5 @@
 /**
- * \file            new_master_pswd.c
+ * \file            cli/new_master_pswd.c
  * \brief           Implementation of command-line interface utilities
  * \author          Acid Weaver
  * \date            2024-12-23
