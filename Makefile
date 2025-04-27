@@ -41,6 +41,11 @@ local: $(TARGET)
 	@echo "Binary file into /usr/local/awpm"
 	sudo install -m 755 -o root -g awpm $(TARGET) /usr/local/bin
 
+locupd:
+	@echo "Update local binary file."
+	sudo install $(TARGET) /usr/local/bin
+
+
 uninstall:
 	sudo rm -f /usr/local/bin/$(TARGET)
 	sudo rm -f /usr/bin/$(TARGET)
