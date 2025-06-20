@@ -27,8 +27,8 @@
 #ifndef CLI_H
 #define CLI_H
 
-#define CLI_NEW "add"
-#define CLI_FORCE_NEW "add -f"
+#define CLI_ADD "add"
+#define CLI_FORCE_ADD "add-f"
 #define CLI_GET "get"
 #define CLI_SHOW_ALL "show all"
 #define CLI_UPDATE "update"
@@ -41,7 +41,7 @@
 #include "db.h"
 struct sqlite3;
 
-void handle_new(struct sqlite3* db, user_t* user);
+void handle_add(struct sqlite3* db, user_t* user);
 void handle_get(struct sqlite3* db, user_t* user);
 void handle_update(struct sqlite3* db, user_t* user);
 void handle_delete(struct sqlite3* db, user_t* user);

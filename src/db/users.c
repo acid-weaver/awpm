@@ -294,7 +294,7 @@ int user_verify_master_key(const user_t user, const unsigned char* master_key) {
                 "Failed to verify master password at 2nd verification step.\n");
         return 1;
     } else {
-        printf("Master password successfully virified!\n");
+        printf("OK\n");
     }
 
     if (cfg.debug) {
@@ -394,6 +394,13 @@ int add_user(sqlite3* db, user_t* user) {
         fprintf(stderr, "Failed to generate salt.\n");
         return -1;
     }
+
+    printf(
+        "You need to set your master password, which would be used via "
+        "cryptographic algoritms to cypher and decipher your data. Pay "
+        "ATTENTION that you will LOSE your data in case you forget it. For "
+        "security reasons there is no way to restore data without master pass "
+        "in acceptable terms.\n");
 
     if (user_set_master_pswd(user) != 0) {
         fprintf(stderr, "Failed to set master password, retry again.\n");

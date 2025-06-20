@@ -29,7 +29,6 @@
 
 #include "db.h"
 #include "mem.h"
-#include "utils.h"
 
 int cred_data_populate(sqlite3_stmt* stmt, cred_data_t* credential_data) {
     const void* buffer;

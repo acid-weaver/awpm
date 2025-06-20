@@ -30,6 +30,7 @@
 #include "cli.h"
 #include "db.h"
 #include "encryption.h"
+#include "errors.h"
 #include "mem.h"
 #include "utils.h"
 
@@ -60,7 +61,7 @@ void handle_update(struct sqlite3* db, user_t* user) {
      */
 
     if (std_input("source", "", search_by.source, INPUT_BUFF_SIZE) != 0) {
-        fprintf(stderr, "Error reading source.\n");
+        fprintf(stderr, MSG_ERR_INPUT, "source");
         return;
     }
 

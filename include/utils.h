@@ -27,33 +27,14 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-// Input constants
-#define INPUT_BUFF_SIZE 64
-
 #define OPTIONAL_PROMPT "(optional, hit Enter to skip)"
 #define PSWD_CONFIRMATION "(confirm previously entered value)"
-
-// OpenSSL encryption constants
-#define SALT_SIZE 16
-#define KEY_SIZE 32
-#define IV_SIZE 16
-#define ITERATIONS 10000
-
-#define HASH_SIZE 64
-#define HASH_ALG EVP_sha3_512()
 
 // Error messages
 #define ERR_USER_NOT_FOUND "User not found."
 #define ERR_DECRYPTION_FAILED "Decryption failed."
 
-struct config {
-    char db_path[INPUT_BUFF_SIZE * 4];
-    int debug;
-    int multiple_accs_per_source;
-};
-
-extern struct config cfg;
-
+// Utils function part
 #include <stdlib.h>
 
 void handle_errors(const char* msg);
