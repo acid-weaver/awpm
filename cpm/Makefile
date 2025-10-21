@@ -35,8 +35,8 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 ### Build rules ###
 ###################
 
-dev: CFLAGS += -DCONFIG_PATH=\"./awpm.ini\"
-dev: $(TARGET)
+dev_build: CFLAGS += -DCONFIG_PATH=\"./awpm.ini\"
+dev_build: $(TARGET)
 	@echo "Built for development with local config: ./awpm.ini"
 
 install_build: CFLAGS += -DCONFIG_PATH=\"$(DEFAULT_CONFIG_PATH)\"
@@ -62,6 +62,9 @@ initdb:
 		echo "No existing database found. Creating new one..."; \
 		touch /var/local/awpm/awpm.db; \
 	fi
+
+dev: dev_build
+	sudo install -m 755 -o root $(TARGET) ~/workspace/lab/awpm/
 
 local: install_build
 	@echo "Installation into local folders."

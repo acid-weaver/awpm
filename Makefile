@@ -3,17 +3,17 @@
 all: pm
 
 pm:
-	$(MAKE) -C pm
+	$(MAKE) -C cpm
 
 clean:
-	$(MAKE) -C pm clean
+	$(MAKE) -C cpm clean
 
 install:
-	$(MAKE) -C pm install
+	$(MAKE) -C cpm install
 
 uninstall:
-	$(MAKE) -C pm uninstall
+	$(MAKE) -C cpm uninstall
 
 dev:
-	$(MAKE) -C pm dev
+	$(MAKE) -C cpm dev
 
