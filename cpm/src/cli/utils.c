@@ -89,6 +89,7 @@ void display_decrypted_cred_data(cred_data_t* results, int result_count,
         }
         printf("=========\n");
         printf("%s", cred_data_to_string(&results[i]));
+        binary_array_secure_free(&results[i].pswd);
     }
     printf("=========\n");
 }

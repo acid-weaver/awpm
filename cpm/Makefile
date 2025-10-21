@@ -64,7 +64,7 @@ initdb:
 	fi
 
 dev: dev_build
-	sudo install -m 755 -o root $(TARGET) ~/workspace/lab/awpm/
+	install -m 755 $(TARGET) ~/workspace/lab/awpm/
 
 local: install_build
 	@echo "Installation into local folders."

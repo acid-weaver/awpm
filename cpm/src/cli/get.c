@@ -35,7 +35,7 @@
 void handle_get(struct sqlite3* db, user_t* user) {
     cred_data_t* results = NULL;
 
-    binary_array_t master_key = {0};
+    binary_array_t master_key = {0}, decrypted_pswd = {0};
     char source[INPUT_BUFF_SIZE];
     int result_count = 0, status_code = 0;
 

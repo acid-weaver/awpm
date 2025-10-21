@@ -18,3 +18,9 @@ AWPM is a C-based credential manager supporting:
 ```bash
 make install
 
+---
+
+## Development notes.
+Internal mem.h library mainly to handle strings and bin data, accumulating low lvl memory managment functions
+High lvl structures are user_t and cred_data_t should be processed only with related functions
+

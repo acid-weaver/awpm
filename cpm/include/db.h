@@ -39,7 +39,7 @@
     "Repeat command after again.\n"
 
 typedef struct {
-    int id; // Primary key
+    int id;
     char username[INPUT_BUFF_SIZE];
     unsigned char salt[SALT_SIZE];
     unsigned char master_iv[IV_SIZE];
