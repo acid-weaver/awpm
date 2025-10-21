@@ -41,7 +41,7 @@
 
 // Config related
 #ifndef CONFIG_PATH
-#define CONFIG_PATH "~/.config/awpm/awpm.conf"
+#define CONFIG_PATH "~/.config/awpm/awpm.ini"
 #endif
 
 struct config {
