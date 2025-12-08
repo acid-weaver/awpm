@@ -1,11 +1,10 @@
 /**
- * \file            cli/new_master_pswd.c
- * \brief           Implementation of command-line interface utilities
+ * \file            cli/msg.h
+ * \brief           Define standard error/other messages for CLI module
  * \author          Acid Weaver
- * \date            2024-12-23
+ * \date            2025-04-28
  * \details
- * Implements the command-line interface function nahdle_new_master_pswd
- * declared in cli.h.
+ * Declares error/other messages for CLI module.
  */
 
 /* Copyright (C) 2024-2025  Acid Weaver <acid.weaver@gmail.com>
@@ -24,21 +23,12 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <stdio.h>
-#include <string.h>
+#ifndef CLI_MSG_H
+#define CLI_MSG_H
 
-#include "cli.h"
-#include "db.h"
-#include "encryption.h"
-#include "mem.h"
-#include "utils.h"
+#define MSG_ERR_MASTER_PSWD "Master password was NOT verified.\n"
+#define MSG_ERR_ENCRYPT_DATA "Failed to encrypt data.\n"
+#define MSG_ERR_DECRYPT_DATA "Failed to decrypt data.\n"
+#define MSG_ERR_GENERATE_META "Failed to generate encryption metadata.\n"
 
-void handle_new_master_pswd(struct sqlite3* db, user_t* user) {
-    int status_code = 0;
-
-    status_code = get_user(db, user);
-    if (status_code != 0) {
-        fprintf(stderr, "Failed to authenticate user.\n");
-        return;
-    }
-}
+#endif // CLI_MSG_H

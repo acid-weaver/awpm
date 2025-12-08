@@ -1,11 +1,11 @@
 /**
- * \file            cli.h
- * \brief           Command-line interface utilities
+ * \file            utils.h
+ * \brief           Common utilities
  * \author          Acid Weaver
  * \date            2024-12-23
  * \details
- * Declares functions for handling command-line interactions, including
- * parsing arguments and managing user input.
+ * This file provides utilities for various needs, that could be used across
+ * whole project.
  */
 
 /* Copyright (C) 2024-2025  Acid Weaver <acid.weaver@gmail.com>
@@ -24,28 +24,25 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef CLI_H
-#define CLI_H
+#ifndef UTILS_H
+#define UTILS_H
 
-#define CLI_NEW "add"
-#define CLI_FORCE_NEW "add -f"
-#define CLI_GET "get"
-#define CLI_SHOW_ALL "show all"
-#define CLI_UPDATE "update"
-#define CLI_DELETE "delete"
-#define CLI_SET_MASTER_PSWD "-m"
+#define OPTIONAL_PROMPT "(optional, hit Enter to skip)"
+#define PSWD_CONFIRMATION "(confirm previously entered value)"
 
-#define CLI_USER "--user"
-#define CLI_DEBUG_MODE "--debug"
+// Error messages
+#define ERR_USER_NOT_FOUND "User not found."
+#define ERR_DECRYPTION_FAILED "Decryption failed."
 
-#include "db.h"
-struct sqlite3;
+// Utils function part
+#include <stdlib.h>
 
-void handle_new(struct sqlite3* db, user_t* user);
-void handle_get(struct sqlite3* db, user_t* user);
-void handle_update(struct sqlite3* db, user_t* user);
-void handle_delete(struct sqlite3* db, user_t* user);
+void handle_errors(const char* msg);
+void handle_interrupt(int sig);
+void disable_debugging();
+int std_input(const char* input_name, const char* description, char* result,
+              size_t result_size);
+int secure_input(const char* input_name, const char* description, char* result,
+                 size_t result_size);
 
-void handle_new_master_pswd(struct sqlite3* db, user_t* user);
-
-#endif // CLI_H
+#endif // UTILS_H

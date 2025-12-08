@@ -1,8 +1,10 @@
-pm
+pm/pm
 .meta
 compile_commands.json
 
 *.db
+*.db.old
+*.db.new
 *.log
 
 .cache/

@@ -29,7 +29,6 @@
 
 #include "db.h"
 #include "mem.h"
-#include "utils.h"
 
 int cred_data_populate(sqlite3_stmt* stmt, cred_data_t* credential_data) {
     const void* buffer;
@@ -43,21 +42,25 @@ int cred_data_populate(sqlite3_stmt* stmt, cred_data_t* credential_data) {
     credential_data->id    = sqlite3_column_int(stmt, 0);
     credential_data->owner = sqlite3_column_int(stmt, 1);
 
+    /* SOURCE */
     buffer = sqlite3_column_text(stmt, 2);
     strncpy(credential_data->source, (const char*)buffer,
             sizeof(credential_data->source) - 1);
     credential_data->source[sizeof(credential_data->source) - 1] = '\0';
 
+    /* LOGIN */
     buffer = sqlite3_column_text(stmt, 3);
     strncpy(credential_data->login, buffer ? (const char*)buffer : "",
             sizeof(credential_data->login) - 1);
     credential_data->login[sizeof(credential_data->login) - 1] = '\0';
 
+    /* EMAIL */
     buffer = sqlite3_column_text(stmt, 4);
     strncpy(credential_data->email, buffer ? (const char*)buffer : "",
             sizeof(credential_data->email) - 1);
     credential_data->email[sizeof(credential_data->email) - 1] = '\0';
 
+    /* IV */
     buffer     = sqlite3_column_blob(stmt, 5);
     buffer_len = sqlite3_column_bytes(stmt, 5);
     if (buffer == NULL || buffer_len != IV_SIZE) {
@@ -68,6 +71,7 @@ int cred_data_populate(sqlite3_stmt* stmt, cred_data_t* credential_data) {
     }
     memcpy(credential_data->iv, buffer, IV_SIZE);
 
+    /* PSWD */
     buffer     = sqlite3_column_blob(stmt, 6);
     buffer_len = sqlite3_column_bytes(stmt, 6);
 

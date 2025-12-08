@@ -28,7 +28,7 @@
 
 #include "db.h"
 
-int initialize_database(sqlite3 **db) {
+int initialize_database(sqlite3 **db, char* db_path) {
     const char *sql_create_users_table =
         "CREATE TABLE IF NOT EXISTS users ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -52,7 +52,7 @@ int initialize_database(sqlite3 **db) {
         "UNIQUE(source, login, email, owner)"
         ");";
 
-    int rc = sqlite3_open(cfg.db_path, db);
+    int rc = sqlite3_open(db_path, db);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(*db));
         return rc;
@@ -76,4 +76,12 @@ int initialize_database(sqlite3 **db) {
     }
 
     return SQLITE_OK;
+}
+
+int move_db(sqlite3 *db, const char* new_path) {
+    char sql[1024];
+    // Ensure WAL is flushed if you use WAL
+    sqlite3_exec(db, "PRAGMA wal_checkpoint(TRUNCATE);", NULL, NULL, NULL);
+    snprintf(sql, sizeof(sql), "VACUUM INTO '%s';", new_path);
+    return sqlite3_exec(db, sql, NULL, NULL, NULL);
 }

@@ -27,7 +27,7 @@
 #include <string.h>
 
 #include "cli.h"
-#include "cli/cli_utils.h"
+#include "cli/utils.h"
 #include "db.h"
 #include "mem.h"
 #include "utils.h"
@@ -79,19 +79,19 @@ void handle_get(struct sqlite3* db, user_t* user) {
         return;
     }
 
-    /*
-     * VERIFY MASTER PASSWORD, GENERATE MASTER KEY SECTION
-     */
+   /*
+    * VERIFY MASTER PASSWORD, GENERATE MASTER KEY SECTION
+    */
 
     if (verify_master_pswd(*user, &master_key) != 0) {
         binary_array_secure_free(&master_key);
-        fprintf(stderr, "Master password was NOT verifyed. Exiting.");
+        fprintf(stderr, "Master password was NOT verifyed. Exiting.\n");
         return;
     }
 
-    /*
-     * DECIPHER AND DISPLAY RESULTS SECTION
-     */
+   /*
+    * DECIPHER AND DISPLAY RESULTS SECTION
+    */
 
     if (strlen(source) == 0) {
         binary_array_secure_free(&master_key);

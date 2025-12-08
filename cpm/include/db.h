@@ -29,8 +29,8 @@
 
 #include <sqlite3.h>
 
+#include "config.h"
 #include "mem.h"
-#include "utils.h"
 
 #define ACCESS_GROUP "awpm"
 #define USER_REGISTERED "Current user successfully registered to use AWPM.\n"
@@ -39,7 +39,7 @@
     "Repeat command after again.\n"
 
 typedef struct {
-    int id; // Primary key
+    int id;
     char username[INPUT_BUFF_SIZE];
     unsigned char salt[SALT_SIZE];
     unsigned char master_iv[IV_SIZE];
@@ -61,7 +61,8 @@ typedef struct {
  * General
  */
 
-int initialize_database(sqlite3** db);
+int initialize_database(sqlite3** db, char* db_path);
+int move_db(sqlite3 *db, const char* new_path);
 
 /*
  * User related

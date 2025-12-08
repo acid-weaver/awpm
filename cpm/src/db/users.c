@@ -123,9 +123,9 @@ int user_set_master_pswd(user_t* user) {
                    session_key = {0}, master_key = {0};
     unsigned char session_iv[IV_SIZE];
 
-    /*
-     * Initialize some required later variables
-     */
+   /*
+    * Initialize some required later variables
+    */
 
     if (generate_random_bytes(user->master_iv, IV_SIZE) != 0) {
         fprintf(stderr, "Failed to generate IV for master password.\n");
@@ -166,11 +166,11 @@ int user_set_master_pswd(user_t* user) {
     }
     binary_array_secure_free(&random_bytes);
 
-    /*
-     * Start of main logic - actually ask master password from user, ask to
-     * confirm this value and cipher random bytes with derived from this
-     * password key. Store cipher values.
-     */
+   /*
+    * Start of main logic - actually ask master password from user, ask to
+    * confirm this value and cipher random bytes with derived from this
+    * password key. Store cipher values.
+    */
 
     secure_buffer = binary_array_secure_alloc(INPUT_BUFF_SIZE);
     if (secure_input("master password", "", (char*)secure_buffer.ptr,
@@ -259,6 +259,7 @@ int user_set_master_pswd(user_t* user) {
     }
     binary_array_secure_free(&master_key);
     binary_array_secure_free(&random_bytes);
+
     return 0;
 }
 
@@ -294,7 +295,7 @@ int user_verify_master_key(const user_t user, const unsigned char* master_key) {
                 "Failed to verify master password at 2nd verification step.\n");
         return 1;
     } else {
-        printf("Master password successfully virified!\n");
+        printf("OK\n");
     }
 
     if (cfg.debug) {
@@ -394,6 +395,13 @@ int add_user(sqlite3* db, user_t* user) {
         fprintf(stderr, "Failed to generate salt.\n");
         return -1;
     }
+
+    printf(
+        "You need to set your master password, which would be used via "
+        "cryptographic algoritms to cypher and decipher your data. Pay "
+        "ATTENTION that you will LOSE your data in case you forget it. For "
+        "security reasons there is no way to restore data without master pass "
+        "in acceptable terms.\n");
 
     if (user_set_master_pswd(user) != 0) {
         fprintf(stderr, "Failed to set master password, retry again.\n");

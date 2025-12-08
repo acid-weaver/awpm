@@ -1,10 +1,10 @@
 /**
- * \file            cli/new.c
+ * \file            cli/add.c
  * \brief           Implementation of command-line interface utilities
  * \author          Acid Weaver
  * \date            2024-12-23
  * \details
- * Implements the command-line interface function handle_new declared in cli.h.
+ * Implements the command-line interface function handle_add declared in cli.h.
  */
 
 /* Copyright (C) 2024-2025  Acid Weaver <acid.weaver@gmail.com>
@@ -27,12 +27,15 @@
 #include <string.h>
 
 #include "cli.h"
+#include "cli/msg.h"
+#include "cli/utils.h"
 #include "db.h"
 #include "encryption.h"
+#include "errors.h"
 #include "mem.h"
 #include "utils.h"
 
-void handle_new(struct sqlite3* db, user_t* user) {
+void handle_add(struct sqlite3* db, user_t* user) {
     cred_data_t credential_data =
                     {
                         .id     = -1,
@@ -54,9 +57,9 @@ void handle_new(struct sqlite3* db, user_t* user) {
         return;
     }
 
-    /*
-     * POPULATE credential_data SECTION
-     */
+   /*
+    * POPULATE credential_data SECTION
+    */
 
     credential_data.owner = user->id;
 
@@ -65,21 +68,21 @@ void handle_new(struct sqlite3* db, user_t* user) {
     }
 
     if (std_input("Source", "", credential_data.source, INPUT_BUFF_SIZE) != 0) {
-        fprintf(stderr, "Error at Source input.\n");
+        fprintf(stderr, MSG_ERR_INPUT, "source");
         return;
     }
 
-    /*
-     * In single-entry-per-source mode, we should update the existing entry.
-     * In multiple-entry-per-source mode or if there are no entries for this
-     * source, we add a new entry.
-     *
-     * Note that technically, we will update credential data if its ID > 0 and
-     * corresponds to an existing entry. If the ID <= 0, we will create a new
-     * entry. If the ID > 0 but there are no existing entries with this ID, it
-     * will be added with the provided ID (which should be treated as an error
-     * in our case).
-     */
+   /*
+    * In single-entry-per-source mode, we should update the existing entry.
+    * In multiple-entry-per-source mode or if there are no entries for this
+    * source, we add a new entry.
+    *
+    * Note that technically, we will update credential data if its ID > 0 and
+    * corresponds to an existing entry. If the ID <= 0, we will create a new
+    * entry. If the ID > 0 but there are no existing entries with this ID, it
+    * will be added with the provided ID (which should be treated as an error
+    * in our case).
+    */
 
     if (cfg.multiple_accs_per_source == 0
         && get_cred_data_by_source(db, *user, credential_data.source, &results,
@@ -89,13 +92,13 @@ void handle_new(struct sqlite3* db, user_t* user) {
                 "Failed to check databse for entries with provided source.\n");
         return;
 
-    } else if (result_count == 1) { // cfg.multiple_accs_per_source = 0 here
+    } else if (cfg.multiple_accs_per_source == 0 && result_count == 1) {
         printf(
             "Founded entry for this source. This row would be updated due to "
             "'one per source' mode is enabled.\n");
         credential_data = results[0];
 
-    } else if (result_count > 1) { // cfg.multiple_accs_per_source = 0 here
+    } else if (cfg.multiple_accs_per_source == 1 || result_count > 1) {
         printf(
             "This source is in multiple account mode. New entry will be "
             "added.\n");
@@ -105,7 +108,7 @@ void handle_new(struct sqlite3* db, user_t* user) {
         && std_input("Login", OPTIONAL_PROMPT, credential_data.login,
                      INPUT_BUFF_SIZE)
                != 0) {
-        fprintf(stderr, "Error at Login input.\n");
+        fprintf(stderr, MSG_ERR_INPUT, "login");
         return;
     }
 
@@ -113,24 +116,24 @@ void handle_new(struct sqlite3* db, user_t* user) {
         && std_input("associated e-mail", OPTIONAL_PROMPT,
                      credential_data.email, sizeof(credential_data.email))
                != 0) {
-        fprintf(stderr, "Error reading e-mail.\n");
+        fprintf(stderr, MSG_ERR_INPUT, "e-mail");
         return;
     }
 
-    /*
-     * KEY OR PASSWORD DATA MUST BE CIPHERED WHILE NOT IN USE
-     * INITIALIZING SESSION_KEY AND SESSION_IV FOR ENCRYPTION
-     */
+   /*
+    * KEY OR PASSWORD DATA MUST BE CIPHERED WHILE NOT IN USE
+    * INITIALIZING SESSION_KEY AND SESSION_IV FOR ENCRYPTION
+    */
 
     session_key = binary_array_secure_alloc(KEY_SIZE);
     if (generate_random_bytes(session_key.ptr, session_key.size) != 0) {
-        handle_errors("Failed to generate session encryption metadata.");
+        handle_errors(MSG_ERR_GENERATE_META);
     }
     session_key.len = session_key.size;
 
     if (generate_random_bytes(session_iv, IV_SIZE) != 0) {
         binary_array_secure_free(&session_key);
-        handle_errors("Failed to generate session encryption metadata.");
+        handle_errors(MSG_ERR_GENERATE_META);
     }
 
     /* Prompt for password to store */
@@ -140,14 +143,14 @@ void handle_new(struct sqlite3* db, user_t* user) {
         != 0) {
         binary_array_secure_free(&session_key);
         binary_array_secure_free(&secure_buffer);
-        fprintf(stderr, "Error reading password.\n");
+        fprintf(stderr, MSG_ERR_INPUT, "password");
         return;
     }
     secure_buffer.len = strlen((char*)secure_buffer.ptr);
 
-    /*
-     * We don't need entered password until encryption will start
-     */
+   /*
+    * We don't need entered password until encryption will start
+    */
 
     if (encrypt_data(session_key.ptr, session_iv, secure_buffer,
                      &credential_data.pswd)
@@ -155,49 +158,20 @@ void handle_new(struct sqlite3* db, user_t* user) {
         binary_array_secure_free(&session_key);
         binary_array_secure_free(&secure_buffer);
         binary_array_secure_free(&credential_data.pswd);
-        fprintf(stderr, "Failed to temporarily cipher important data.\n");
+        fprintf(stderr, MSG_ERR_ENCRYPT_DATA);
         return;
     }
     binary_array_secure_free(&secure_buffer);
 
     /* Prompt for encryption (master) password */
-    secure_buffer = binary_array_secure_alloc(INPUT_BUFF_SIZE);
-    if (secure_input("master password", "", (char*)secure_buffer.ptr,
-                     secure_buffer.size)
-        != 0) {
-        binary_array_secure_free(&session_key);
-        binary_array_secure_free(&secure_buffer);
-        binary_array_secure_free(&credential_data.pswd);
-        handle_errors("Failed to read encryption password.");
-        return;
-    }
-    secure_buffer.len = strlen((char*)secure_buffer.ptr);
-
-    master_key = binary_array_secure_alloc(KEY_SIZE);
-    if (generate_key_from_password(user->salt, (char*)secure_buffer.ptr,
-                                   master_key.ptr)
-        != 0) {
-        binary_array_secure_free(&session_key);
-        binary_array_secure_free(&secure_buffer);
-        binary_array_secure_free(&credential_data.pswd);
-        binary_array_secure_free(&master_key);
-        fprintf(stderr, "Failed to generate key from password.\n");
-        return;
-    }
-    binary_array_secure_free(&secure_buffer);
-    master_key.len = KEY_SIZE;
-
-    if (user_verify_master_key(*user, master_key.ptr) != 0) {
-        binary_array_secure_free(&master_key);
-        binary_array_secure_free(&session_key);
-        binary_array_secure_free(&credential_data.pswd);
-        fprintf(stderr, "Invalid master password, repeat.\n");
+    if (verify_master_pswd(*user, &master_key) != 0) {
+        fprintf(stderr, MSG_ERR_MASTER_PSWD);
         return;
     }
 
-    /*
-     * Decipher password to storee and cipher it with master key
-     */
+   /*
+    * Decipher password to store and cipher it with master key
+    */
 
     if (decrypt_data(session_key.ptr, session_iv, credential_data.pswd,
                      &credential_data.pswd)
@@ -205,7 +179,7 @@ void handle_new(struct sqlite3* db, user_t* user) {
         binary_array_secure_free(&master_key);
         binary_array_secure_free(&session_key);
         binary_array_secure_free(&credential_data.pswd);
-        handle_errors("Failed to decipher temporarily encrypted memory data.");
+        handle_errors(MSG_ERR_DECRYPT_DATA);
     }
     binary_array_secure_free(&session_key);
 
@@ -214,7 +188,7 @@ void handle_new(struct sqlite3* db, user_t* user) {
         != 0) {
         binary_array_secure_free(&master_key);
         binary_array_secure_free(&credential_data.pswd);
-        fprintf(stderr, "Failed to encrypt credential data.\n");
+        fprintf(stderr, MSG_ERR_ENCRYPT_DATA);
         return;
     }
     binary_array_secure_free(&master_key);

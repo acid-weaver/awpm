@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "config.h"
 #include "mem.h"
 #include "utils.h"
 
@@ -156,6 +157,8 @@ int encrypt_data(const unsigned char* key, const unsigned char* iv,
 
 int decrypt_data(const unsigned char* key, const unsigned char* iv,
                  const binary_array_t ciphertext, binary_array_t* plaintext) {
+    /* plaintext variable would be securely allocated (binary_array_secure_alloc) - make sure to securely free it after! (binary_array_secure_free) */
+
     EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
     int len             = 0;
 
@@ -167,7 +170,7 @@ int decrypt_data(const unsigned char* key, const unsigned char* iv,
         handle_errors("Failed to initialize AES decryption");
     }
 
-    *plaintext = binary_array_alloc(ciphertext.len + 1);
+    *plaintext = binary_array_secure_alloc(ciphertext.len + 1);
     if (plaintext == NULL) {
         handle_errors("Memory allocation for plaintext failed");
     }

@@ -25,7 +25,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cli/cli_utils.h"
+#include "cli/utils.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -72,6 +72,7 @@ int verify_master_pswd(user_t user, binary_array_t* master_key) {
         return 1;
     }
 
+    printf("Master password succesfully verified!\n");
     return 0;
 }
 
@@ -88,6 +89,7 @@ void display_decrypted_cred_data(cred_data_t* results, int result_count,
         }
         printf("=========\n");
         printf("%s", cred_data_to_string(&results[i]));
+        binary_array_secure_free(&results[i].pswd);
     }
     printf("=========\n");
 }
