@@ -1,10 +1,10 @@
-pm/pm
+cpm/pm
 .meta
 compile_commands.json
 
+awpm.db*
+
 *.db
-*.db.old
-*.db.new
 *.log
 
 .cache/
