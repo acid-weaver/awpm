@@ -1,6 +1,9 @@
-pm/pm
+cpm/pm
+
 .meta
 compile_commands.json
+
+awpm.db*
 
 *.db
 *.log
