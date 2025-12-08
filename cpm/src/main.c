@@ -32,12 +32,9 @@
 
 #include "cli.h"
 #include "db.h"
+#include "config.h"
 #include "utils.h"
 
-// struct config cfg = {
-//     .debug = 0, .multiple_accs_per_source = 0, .db_path = "awpm.db",
-//     // .db_path = "/var/local/awpm/awpm.db",
-// };
 
 int main(int argc, char* argv[]) {
     user_t user = {0};
@@ -50,7 +47,7 @@ int main(int argc, char* argv[]) {
                           */
     if (argc < 2) {
         fprintf(stderr, "Usage: pm %s | %s | %s | %s [%s]\n", CLI_ADD,
-                CLI_FORCE_ADD, CLI_GET, CLI_SET_MASTER_PSWD, CLI_DEBUG_MODE);
+                CLI_FORCE_ADD, CLI_GET, CLI_NEW_MASTER_PSWD, CLI_DEBUG_MODE);
         return 1;
     }
 
@@ -86,7 +83,7 @@ int main(int argc, char* argv[]) {
 
     printf("Greetings, %s!\n", user.username);
 
-    initialize_database(&db);
+    initialize_database(&db, cfg.db_path);
 
     if (strcmp(argv[1], CLI_ADD) == 0) {
         if (argc > 2 && strcmp(argv[2], "-f") == 0) {
@@ -102,14 +99,15 @@ int main(int argc, char* argv[]) {
         handle_update(db, &user);
     } else if (strcmp(argv[1], CLI_DELETE) == 0) {
         handle_delete(db, &user);
-        /*
-         *} else if (strcmp(argv[1], CLI_SET_MASTER_PSWD) == 0) {
-         *  handle_set_master_pswd(db, &user);
-         */
+    } else if (strcmp(argv[1], CLI_NEW_MASTER_PSWD) == 0) {
+        handle_new_master_pswd(db, &user);
     } else {
         fprintf(stderr, "Unknown parameter: %s\n", argv[1]);
     }
 
-    sqlite3_close(db);
+    if (db != NULL) {
+        sqlite3_close_v2(db);
+    }
+
     return 0;
 }

@@ -61,7 +61,8 @@ typedef struct {
  * General
  */
 
-int initialize_database(sqlite3** db);
+int initialize_database(sqlite3** db, char* db_path);
+int move_db(sqlite3 *db, const char* new_path);
 
 /*
  * User related

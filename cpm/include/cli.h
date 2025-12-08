@@ -33,7 +33,7 @@
 #define CLI_SHOW_ALL "show all"
 #define CLI_UPDATE "update"
 #define CLI_DELETE "delete"
-#define CLI_SET_MASTER_PSWD "-m"
+#define CLI_NEW_MASTER_PSWD "pswd"
 
 #define CLI_USER "--user"
 #define CLI_DEBUG_MODE "--debug"

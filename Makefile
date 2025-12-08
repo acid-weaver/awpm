@@ -11,6 +11,9 @@ clean:
 install:
 	$(MAKE) -C cpm install
 
+binupd:
+	$(MAKE) -C cpm binupd
+
 uninstall:
 	$(MAKE) -C cpm uninstall
 

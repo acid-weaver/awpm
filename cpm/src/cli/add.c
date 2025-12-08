@@ -57,9 +57,9 @@ void handle_add(struct sqlite3* db, user_t* user) {
         return;
     }
 
-    /*
-     * POPULATE credential_data SECTION
-     */
+   /*
+    * POPULATE credential_data SECTION
+    */
 
     credential_data.owner = user->id;
 
@@ -72,17 +72,17 @@ void handle_add(struct sqlite3* db, user_t* user) {
         return;
     }
 
-    /*
-     * In single-entry-per-source mode, we should update the existing entry.
-     * In multiple-entry-per-source mode or if there are no entries for this
-     * source, we add a new entry.
-     *
-     * Note that technically, we will update credential data if its ID > 0 and
-     * corresponds to an existing entry. If the ID <= 0, we will create a new
-     * entry. If the ID > 0 but there are no existing entries with this ID, it
-     * will be added with the provided ID (which should be treated as an error
-     * in our case).
-     */
+   /*
+    * In single-entry-per-source mode, we should update the existing entry.
+    * In multiple-entry-per-source mode or if there are no entries for this
+    * source, we add a new entry.
+    *
+    * Note that technically, we will update credential data if its ID > 0 and
+    * corresponds to an existing entry. If the ID <= 0, we will create a new
+    * entry. If the ID > 0 but there are no existing entries with this ID, it
+    * will be added with the provided ID (which should be treated as an error
+    * in our case).
+    */
 
     if (cfg.multiple_accs_per_source == 0
         && get_cred_data_by_source(db, *user, credential_data.source, &results,
@@ -120,10 +120,10 @@ void handle_add(struct sqlite3* db, user_t* user) {
         return;
     }
 
-    /*
-     * KEY OR PASSWORD DATA MUST BE CIPHERED WHILE NOT IN USE
-     * INITIALIZING SESSION_KEY AND SESSION_IV FOR ENCRYPTION
-     */
+   /*
+    * KEY OR PASSWORD DATA MUST BE CIPHERED WHILE NOT IN USE
+    * INITIALIZING SESSION_KEY AND SESSION_IV FOR ENCRYPTION
+    */
 
     session_key = binary_array_secure_alloc(KEY_SIZE);
     if (generate_random_bytes(session_key.ptr, session_key.size) != 0) {
@@ -148,9 +148,9 @@ void handle_add(struct sqlite3* db, user_t* user) {
     }
     secure_buffer.len = strlen((char*)secure_buffer.ptr);
 
-    /*
-     * We don't need entered password until encryption will start
-     */
+   /*
+    * We don't need entered password until encryption will start
+    */
 
     if (encrypt_data(session_key.ptr, session_iv, secure_buffer,
                      &credential_data.pswd)
@@ -169,9 +169,9 @@ void handle_add(struct sqlite3* db, user_t* user) {
         return;
     }
 
-    /*
-     * Decipher password to store and cipher it with master key
-     */
+   /*
+    * Decipher password to store and cipher it with master key
+    */
 
     if (decrypt_data(session_key.ptr, session_iv, credential_data.pswd,
                      &credential_data.pswd)

@@ -25,7 +25,7 @@ DEFAULT_CONFIG_PATH = "~/.config/awpm/awpm.ini"
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -DCONFIG_PATH=\"$(DEFAULT_CONFIG_PATH)\" -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(dir $@)
@@ -101,4 +101,3 @@ clean:
 
 ### Phony targets ###
 .PHONY: all clean
-

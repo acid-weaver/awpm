@@ -35,7 +35,7 @@
 void handle_get(struct sqlite3* db, user_t* user) {
     cred_data_t* results = NULL;
 
-    binary_array_t master_key = {0}, decrypted_pswd = {0};
+    binary_array_t master_key = {0};
     char source[INPUT_BUFF_SIZE];
     int result_count = 0, status_code = 0;
 
@@ -79,9 +79,9 @@ void handle_get(struct sqlite3* db, user_t* user) {
         return;
     }
 
-    /*
-     * VERIFY MASTER PASSWORD, GENERATE MASTER KEY SECTION
-     */
+   /*
+    * VERIFY MASTER PASSWORD, GENERATE MASTER KEY SECTION
+    */
 
     if (verify_master_pswd(*user, &master_key) != 0) {
         binary_array_secure_free(&master_key);
@@ -89,9 +89,9 @@ void handle_get(struct sqlite3* db, user_t* user) {
         return;
     }
 
-    /*
-     * DECIPHER AND DISPLAY RESULTS SECTION
-     */
+   /*
+    * DECIPHER AND DISPLAY RESULTS SECTION
+    */
 
     if (strlen(source) == 0) {
         binary_array_secure_free(&master_key);
