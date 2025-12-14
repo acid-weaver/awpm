@@ -27,8 +27,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "db.h"
-#include "mem.h"
+#include "core/db.h"
+#include "lib/mem.h"
 
 int cred_data_populate(sqlite3_stmt* stmt, cred_data_t* credential_data) {
     const void* buffer;
@@ -240,6 +240,23 @@ int get_all_cred_data(sqlite3* db, const user_t user, cred_data_t** results,
 
 int get_cred_data_by_step(sqlite3* db, const user_t user, const int step,
                           const cred_data_t search_by, cred_data_t* result) {
+    /*
+     * Function exclusively for case, when we have multiple account per Sourse
+     * and need to select just one of them to provide user pswd. Of course it
+     * handles also case of one account per sourse.
+     *
+     * Main idea is that we have unique entry for Sourse, Login, E-mail and
+     * Owner, that could be ensure in db/database.c at initialize_database
+     * function, sql_create_creddata_table variable. So "step" means a current
+     * stage, where we continously ask user for input this fields, until we
+     * found that exact entry. We can find it before user enter all fields,
+     * but just like Sourse and Login, if there only one entry for this Source,
+     * Login and Owner.
+     *
+     * If we found that exact entry, function returns 0, if there multiple
+     * entries - returns 1. In case of error - -1.
+     */
+
     sqlite3_stmt* stmt;
     char sql_query[256];
     int rc, parameter_index;

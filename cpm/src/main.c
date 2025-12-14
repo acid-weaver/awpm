@@ -30,11 +30,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cli.h"
-#include "db.h"
-#include "config.h"
-#include "utils.h"
-
+#include "cli/cli.h"
+#include "core/config.h"
+#include "core/db.h"
+#include "lib/awpm_utils.h"
 
 int main(int argc, char* argv[]) {
     user_t user = {0};

@@ -26,14 +26,14 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cli.h"
+#include "cli/cli.h"
+#include "cli/cli_utils.h"
 #include "cli/msg.h"
-#include "cli/utils.h"
-#include "db.h"
-#include "encryption.h"
-#include "errors.h"
-#include "mem.h"
-#include "utils.h"
+#include "core/db.h"
+#include "core/encryption.h"
+#include "lib/awpm_utils.h"
+#include "lib/errors.h"
+#include "lib/mem.h"
 
 void handle_add(struct sqlite3* db, user_t* user) {
     cred_data_t credential_data =
@@ -57,9 +57,9 @@ void handle_add(struct sqlite3* db, user_t* user) {
         return;
     }
 
-   /*
-    * POPULATE credential_data SECTION
-    */
+    /*
+     * POPULATE credential_data SECTION
+     */
 
     credential_data.owner = user->id;
 
@@ -67,41 +67,45 @@ void handle_add(struct sqlite3* db, user_t* user) {
         handle_errors("Failed to generate IV for password encryption.");
     }
 
-    if (std_input("Source", "", credential_data.source, INPUT_BUFF_SIZE) != 0) {
+    if (std_input("Source", "", credential_data.source, INPUT_BUFF_SIZE) != 0
+        || strlen(credential_data.source) == 0) {
         fprintf(stderr, MSG_ERR_INPUT, "source");
         return;
     }
 
-   /*
-    * In single-entry-per-source mode, we should update the existing entry.
-    * In multiple-entry-per-source mode or if there are no entries for this
-    * source, we add a new entry.
-    *
-    * Note that technically, we will update credential data if its ID > 0 and
-    * corresponds to an existing entry. If the ID <= 0, we will create a new
-    * entry. If the ID > 0 but there are no existing entries with this ID, it
-    * will be added with the provided ID (which should be treated as an error
-    * in our case).
-    */
-
-    if (cfg.multiple_accs_per_source == 0
-        && get_cred_data_by_source(db, *user, credential_data.source, &results,
-                                   &result_count)
-               != 0) {
+    if (get_cred_data_by_source(db, *user, credential_data.source, &results,
+                                &result_count)
+        != 0) {
         fprintf(stderr,
                 "Failed to check databse for entries with provided source.\n");
         return;
+    }
 
-    } else if (cfg.multiple_accs_per_source == 0 && result_count == 1) {
+    /*
+     * In single-entry-per-source mode, we should update the existing entry.
+     * In multiple-entry-per-source mode or if there are no entries for this
+     * source, we add a new entry.
+     *
+     * Note that technically, we will update credential data if its ID > 0 and
+     * corresponds to an existing entry. If the ID <= 0, we will create a new
+     * entry. If the ID > 0 but there are no existing entries with this ID, it
+     * will be added with the provided ID (which should be treated as an error
+     * in our case).
+     */
+
+    if (cfg.multiple_accs_per_source == 0 && result_count == 1) {
         printf(
             "Founded entry for this source. This row would be updated due to "
             "'one per source' mode is enabled.\n");
         credential_data = results[0];
 
-    } else if (cfg.multiple_accs_per_source == 1 || result_count > 1) {
+    } else if (cfg.multiple_accs_per_source == 1 && result_count >= 1) {
+        printf("Multiple account mode. New entry will be added.\n");
+
+    } else if (cfg.multiple_accs_per_source == 0 && result_count > 1) {
         printf(
-            "This source is in multiple account mode. New entry will be "
-            "added.\n");
+            "Multiple accounts for this source already exists. New entry will "
+            "be added.\n");
     }
 
     if (credential_data.id == -1
@@ -120,10 +124,10 @@ void handle_add(struct sqlite3* db, user_t* user) {
         return;
     }
 
-   /*
-    * KEY OR PASSWORD DATA MUST BE CIPHERED WHILE NOT IN USE
-    * INITIALIZING SESSION_KEY AND SESSION_IV FOR ENCRYPTION
-    */
+    /*
+     * KEY OR PASSWORD DATA MUST BE CIPHERED WHILE NOT IN USE
+     * INITIALIZING SESSION_KEY AND SESSION_IV FOR ENCRYPTION
+     */
 
     session_key = binary_array_secure_alloc(KEY_SIZE);
     if (generate_random_bytes(session_key.ptr, session_key.size) != 0) {
@@ -148,9 +152,9 @@ void handle_add(struct sqlite3* db, user_t* user) {
     }
     secure_buffer.len = strlen((char*)secure_buffer.ptr);
 
-   /*
-    * We don't need entered password until encryption will start
-    */
+    /*
+     * We don't need entered password until encryption will start
+     */
 
     if (encrypt_data(session_key.ptr, session_iv, secure_buffer,
                      &credential_data.pswd)
@@ -169,9 +173,9 @@ void handle_add(struct sqlite3* db, user_t* user) {
         return;
     }
 
-   /*
-    * Decipher password to store and cipher it with master key
-    */
+    /*
+     * Decipher password to store and cipher it with master key
+     */
 
     if (decrypt_data(session_key.ptr, session_iv, credential_data.pswd,
                      &credential_data.pswd)

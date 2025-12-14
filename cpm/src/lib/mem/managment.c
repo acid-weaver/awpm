@@ -28,10 +28,10 @@
 #include <string.h>
 #include <sys/mman.h>
 
-#include "mem.h"
+#include "lib/mem.h"
 
-void *safe_malloc(size_t size) {
-    void *ptr = malloc(size);
+void* safe_malloc(size_t size) {
+    void* ptr = malloc(size);
 
     if (ptr == NULL) {
         fprintf(stderr, "Memory allocation failed for %zu bytes.\n", size);
@@ -41,7 +41,7 @@ void *safe_malloc(size_t size) {
     return ptr;
 }
 
-void safe_free(void *ptr) {
+void safe_free(void* ptr) {
     if (ptr != NULL) {
         free(ptr);
     }
@@ -51,8 +51,8 @@ void safe_free(void *ptr) {
  * Secure variants
  */
 
-void *secure_malloc(size_t size) {
-    void *ptr = safe_malloc(size);
+void* secure_malloc(size_t size) {
+    void* ptr = safe_malloc(size);
 
     if (mlock(ptr, size) != 0) {
         perror("mlock failed");
@@ -63,7 +63,7 @@ void *secure_malloc(size_t size) {
     return ptr;
 }
 
-void secure_free(void *ptr, size_t size) {
+void secure_free(void* ptr, size_t size) {
     if (ptr != NULL) {
         explicit_bzero(ptr, size);
         munlock(ptr, size);

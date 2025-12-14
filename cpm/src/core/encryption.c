@@ -23,16 +23,16 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "encryption.h"
+#include "core/encryption.h"
 
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
-#include "mem.h"
-#include "utils.h"
+#include "core/config.h"
+#include "lib/awpm_utils.h"
+#include "lib/mem.h"
 
 int generate_random_bytes(unsigned char* ptr, size_t size) {
     if (ptr == NULL || size == 0) {
@@ -157,7 +157,9 @@ int encrypt_data(const unsigned char* key, const unsigned char* iv,
 
 int decrypt_data(const unsigned char* key, const unsigned char* iv,
                  const binary_array_t ciphertext, binary_array_t* plaintext) {
-    /* plaintext variable would be securely allocated (binary_array_secure_alloc) - make sure to securely free it after! (binary_array_secure_free) */
+    /* plaintext variable would be securely allocated
+     * (binary_array_secure_alloc) - make sure to securely free it after!
+     * (binary_array_secure_free) */
 
     EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
     int len             = 0;

@@ -26,10 +26,10 @@
 #include <sqlite3.h>
 #include <stdio.h>
 
-#include "db.h"
+#include "core/db.h"
 
-int initialize_database(sqlite3 **db, char* db_path) {
-    const char *sql_create_users_table =
+int initialize_database(sqlite3** db, char* db_path) {
+    const char* sql_create_users_table =
         "CREATE TABLE IF NOT EXISTS users ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "username TEXT UNIQUE NOT NULL, "
@@ -39,7 +39,7 @@ int initialize_database(sqlite3 **db, char* db_path) {
         "hash BLOB NOT NULL"
         ");";
 
-    const char *sql_create_creddata_table =
+    const char* sql_create_creddata_table =
         "CREATE TABLE IF NOT EXISTS creddata ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
         "source TEXT NOT NULL, "
@@ -58,7 +58,7 @@ int initialize_database(sqlite3 **db, char* db_path) {
         return rc;
     }
 
-    char *err_msg = NULL;
+    char* err_msg = NULL;
     rc            = sqlite3_exec(*db, sql_create_users_table, 0, 0, &err_msg);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "SQL error (users table): %s\n", err_msg);
@@ -78,7 +78,7 @@ int initialize_database(sqlite3 **db, char* db_path) {
     return SQLITE_OK;
 }
 
-int move_db(sqlite3 *db, const char* new_path) {
+int move_db(sqlite3* db, const char* new_path) {
     char sql[1024];
     // Ensure WAL is flushed if you use WAL
     sqlite3_exec(db, "PRAGMA wal_checkpoint(TRUNCATE);", NULL, NULL, NULL);

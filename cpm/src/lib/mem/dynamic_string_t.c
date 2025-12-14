@@ -29,7 +29,7 @@
 #include <string.h>
 #include <sys/mman.h>
 
-#include "mem.h"
+#include "lib/mem.h"
 
 dynamic_string_t dynamic_string_alloc(size_t size) {
     dynamic_string_t dyn_str = {.size = 0, .ptr = NULL};
@@ -39,7 +39,7 @@ dynamic_string_t dynamic_string_alloc(size_t size) {
     return dyn_str;
 }
 
-void dynamic_string_free(dynamic_string_t *dyn_str) {
+void dynamic_string_free(dynamic_string_t* dyn_str) {
     if (dyn_str != NULL) { // ptr not NULL check in safe_free
         safe_free(dyn_str->ptr);
         dyn_str->ptr  = NULL;
@@ -58,7 +58,7 @@ dynamic_string_t dynamic_string_secure_alloc(size_t size) {
     return sec_dyn_str;
 }
 
-void dynamic_string_secure_free(dynamic_string_t *sec_dyn_str) {
+void dynamic_string_secure_free(dynamic_string_t* sec_dyn_str) {
     if (sec_dyn_str != NULL) {
         secure_free(sec_dyn_str->ptr, sec_dyn_str->size);
         sec_dyn_str->ptr  = NULL;
@@ -66,7 +66,7 @@ void dynamic_string_secure_free(dynamic_string_t *sec_dyn_str) {
     }
 }
 
-int dynamic_string_copy(dynamic_string_t *dst, dynamic_string_t *src) {
+int dynamic_string_copy(dynamic_string_t* dst, dynamic_string_t* src) {
     if (src == NULL || src->ptr == NULL || src->size == 0) {
         fprintf(stderr, "Invalid source dynamic_string_t.\n");
         return -1;
@@ -81,7 +81,7 @@ int dynamic_string_copy(dynamic_string_t *dst, dynamic_string_t *src) {
     return 0;
 }
 
-binary_array_t dynamic_string_to_binary_array(dynamic_string_t *dyn_str) {
+binary_array_t dynamic_string_to_binary_array(dynamic_string_t* dyn_str) {
     binary_array_t bin_arr = {
         .size = 0,
         .len  = 0,

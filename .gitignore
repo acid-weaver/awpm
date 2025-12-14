@@ -8,6 +8,7 @@ awpm.db*
 *.db
 *.log
 
+.zed/
 .cache/
 .git/
 bin/

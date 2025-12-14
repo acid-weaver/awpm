@@ -23,7 +23,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "utils.h"
+#include "lib/awpm_utils.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,7 +32,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-void handle_errors(const char *msg) {
+void handle_errors(const char* msg) {
     perror(msg);
     exit(EXIT_FAILURE);
 }
@@ -52,7 +52,7 @@ void disable_debugging() {
     }
 }
 
-int std_input(const char *input_name, const char *description, char *result,
+int std_input(const char* input_name, const char* description, char* result,
               size_t result_size) {
     if (!result || result_size == 0) {
         fprintf(stderr, "Invalid buffer provided for %s input.\n", input_name);
@@ -74,7 +74,7 @@ int std_input(const char *input_name, const char *description, char *result,
     return 0;
 }
 
-int secure_input(const char *input_name, const char *description, char *result,
+int secure_input(const char* input_name, const char* description, char* result,
                  size_t result_size) {
     int status_code = 0;
     struct termios oldt, newt;

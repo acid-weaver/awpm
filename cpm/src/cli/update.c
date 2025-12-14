@@ -27,12 +27,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cli.h"
-#include "db.h"
-#include "encryption.h"
-#include "errors.h"
-#include "mem.h"
-#include "utils.h"
+#include "cli/cli.h"
+#include "core/db.h"
+#include "core/encryption.h"
+#include "lib/awpm_utils.h"
+#include "lib/errors.h"
+#include "lib/mem.h"
 
 void handle_update(struct sqlite3* db, user_t* user) {
     cred_data_t search_by = {0}, credential_data_to_update = {0};
@@ -60,8 +60,9 @@ void handle_update(struct sqlite3* db, user_t* user) {
      * GET DATA TO EDIT
      */
 
-    if (std_input("source", "", search_by.source, INPUT_BUFF_SIZE) != 0) {
-        fprintf(stderr, MSG_ERR_INPUT, "source");
+    if (std_input("source", "", search_by.source, INPUT_BUFF_SIZE) != 0
+        || strlen(search_by.source) == 0) {
+        fprintf(stderr, MSG_ERR_INPUT, "Source");
         return;
     }
 

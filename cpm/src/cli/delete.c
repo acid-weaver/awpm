@@ -27,11 +27,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cli.h"
-#include "db.h"
-#include "encryption.h"
-#include "mem.h"
-#include "utils.h"
+#include "cli/cli.h"
+#include "core/db.h"
+#include "core/encryption.h"
+#include "lib/awpm_utils.h"
+#include "lib/mem.h"
 
 void handle_delete(struct sqlite3* db, user_t* user) {
     cred_data_t search_by = {0}, credential_data_to_delete = {0};

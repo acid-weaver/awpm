@@ -38,7 +38,7 @@
 #define CLI_USER "--user"
 #define CLI_DEBUG_MODE "--debug"
 
-#include "db.h"
+#include "../core/db.h"
 struct sqlite3;
 
 void handle_add(struct sqlite3* db, user_t* user);

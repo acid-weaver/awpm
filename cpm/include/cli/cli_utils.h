@@ -26,7 +26,7 @@
 #ifndef CLI_UTILS_H
 #define CLI_UTILS_H
 
-#include "db.h"
+#include "core/db.h"
 
 int verify_master_pswd(user_t user, binary_array_t* master_key);
 

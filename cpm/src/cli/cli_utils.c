@@ -25,15 +25,15 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cli/utils.h"
+#include "cli/cli_utils.h"
 
 #include <stdio.h>
 #include <string.h>
 
-#include "db.h"
-#include "encryption.h"
-#include "mem.h"
-#include "utils.h"
+#include "core/db.h"
+#include "core/encryption.h"
+#include "lib/awpm_utils.h"
+#include "lib/mem.h"
 
 int verify_master_pswd(user_t user, binary_array_t* master_key) {
     binary_array_t secure_buffer = {0};
@@ -100,6 +100,24 @@ void display_cred_data(cred_data_t* results, int result_count) {
         results[i].pswd = string_to_binary_array("***");
         printf("=========\n");
         printf("%s", cred_data_to_string(&results[i]));
+    }
+    printf("=========\n");
+}
+
+int copy_decrypted_cred_data(cred_data_t* results, int result_count,
+                             binary_array_t* master_key) {
+    for (int i = 0; i < result_count; i++) {
+        if (decrypt_data(master_key->ptr, results[i].iv, results[i].pswd,
+                         &results[i].pswd)
+            != 0) {
+            fprintf(stderr,
+                    "Failed to decrypt password for credential data with "
+                    "ID: %d.\n",
+                    results[i].id);
+        }
+        printf("=========\n");
+        printf("%s", cred_data_to_string(&results[i]));
+        binary_array_secure_free(&results[i].pswd);
     }
     printf("=========\n");
 }

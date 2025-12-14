@@ -26,11 +26,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cli.h"
-#include "cli/utils.h"
-#include "db.h"
-#include "mem.h"
-#include "utils.h"
+#include "cli/cli.h"
+#include "cli/cli_utils.h"
+#include "core/db.h"
+#include "lib/awpm_utils.h"
+#include "lib/mem.h"
 
 void handle_get(struct sqlite3* db, user_t* user) {
     cred_data_t* results = NULL;
@@ -79,24 +79,26 @@ void handle_get(struct sqlite3* db, user_t* user) {
         return;
     }
 
-   /*
-    * VERIFY MASTER PASSWORD, GENERATE MASTER KEY SECTION
-    */
+    /*
+     * VERIFY MASTER PASSWORD, GENERATE MASTER KEY SECTION
+     */
 
     if (verify_master_pswd(*user, &master_key) != 0) {
         binary_array_secure_free(&master_key);
-        fprintf(stderr, "Master password was NOT verifyed. Exiting.\n");
+        fprintf(stderr, "Master password was NOT verified. Exiting.\n");
         return;
     }
 
-   /*
-    * DECIPHER AND DISPLAY RESULTS SECTION
-    */
+    /*
+     * DECIPHER AND DISPLAY RESULTS SECTION
+     */
 
     if (strlen(source) == 0) {
+        /* Here we show list of all entries - Source, Login and E-mail */
         binary_array_secure_free(&master_key);
         display_cred_data(results, result_count);
     } else {
+        /* Here we should provide all data for entry, including pswd */
         display_decrypted_cred_data(results, result_count, &master_key);
     }
 

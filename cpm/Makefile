@@ -1,29 +1,37 @@
-# Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -Iinclude -Iinclude/db -Iinclude/cli -g
+CFLAGS = -Wall -Wextra -Iinclude -g
 LDFLAGS = -lsqlite3 -lssl -lcrypto
 
-# Project directories
 SRCDIR = src
 OBJDIR = obj
 
 # Automatically find all .c files in SRCDIR
 SRCS = $(shell find $(SRCDIR) -type f -name '*.c')
-
-# Object files stored with the same hierarchy as source files
 OBJS = $(SRCS:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
-# Binary file name
 TARGET = pm
+CONFIG = awpm.ini
+DB = awpm.db
 
-DEFAULT_CONFIG_PATH = "~/.config/awpm/awpm.ini"
+# Development related
+# Here we don't have separete folder for data, like DB file, etc. unlike in
+# Installation rules.
+# DEV_DIR is relative to this Makefile.
+# DEV_CONFIG_DIR is relative to TARGET (awpm binary) file. See config.c .
+DEV_DIR = ..
+DEV_CONFIG_DIR = .
+
+# Installation related
+GROUP = awpm
+DEFAULT_CONFIG_DIR = ~/.config/awpm
+LOCAL_BIN = /usr/local/bin
+LOCAL_DATA_DIR = /var/local/awpm
 
 ###################################
 ### Compile binary instractions ###
 ###################################
 
 all: $(TARGET)
-
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
@@ -35,65 +43,84 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 ### Build rules ###
 ###################
 
-dev_build: CFLAGS += -DCONFIG_PATH=\"./awpm.ini\"
+dev_build: CFLAGS += -DCONFIG_PATH=\"$(DEV_CONFIG_DIR)/$(CONFIG)\"
 dev_build: $(TARGET)
-	@echo "Built for development with local config: ./awpm.ini"
+	@echo "Built for development with local config: $(DEV_CONFIG_DIR)/$(CONFIG)"
 
-install_build: CFLAGS += -DCONFIG_PATH=\"$(DEFAULT_CONFIG_PATH)\"
+install_build: CFLAGS += -DCONFIG_PATH=\"$(DEFAULT_CONFIG_DIR)/$(CONFIG)\"
 install_build: $(TARGET)
-	@echo "Built for install with config path: $(DEFAULT_CONFIG_PATH)"
+	@echo "Built for install with config path: $(DEFAULT_CONFIG_DIR)/$(CONFIG)"
 
 #################################
 ### Installation/update rules ###
 #################################
 
-initdb:
-	@if [ -f /var/local/awpm/awpm.db ]; then \
-		echo "Database already exists at /var/local/awpm/awpm.db."; \
+init_db:
+	@if [ -f $(LOCAL_DATA_DIR)/$(DB) ]; then \
+		echo "Database already exists at $(LOCAL_DATA_DIR)/$(DB)"; \
 		read -p "Do you want to create a NEW one (backup current)? [y/N] " ans; \
 		if [ "$$ans" = "y" ]; then \
-			mv /var/local/awpm/awpm.db /var/local/awpm/awpm.db.backup_`date +%Y%m%d%H%M%S`; \
-			touch /var/local/awpm/awpm.db; \
+			mv $(LOCAL_DATA_DIR)/$(DB) $(LOCAL_DATA_DIR)/$(DB).backup_`date +%Y%m%d%H%M%S`; \
+			touch $(LOCAL_DATA_DIR)/$(DB); \
 			echo "New database created and old one backed up."; \
 		else \
 			echo "Keeping existing database."; \
 		fi \
 	else \
 		echo "No existing database found. Creating new one..."; \
-		touch /var/local/awpm/awpm.db; \
+		touch $(LOCAL_DATA_DIR)/$(DB); \
 	fi
 
 dev: dev_build
-	install -m 755 $(TARGET) ~/workspace/lab/awpm/
+	install -m 755 $(TARGET) $(DEV_DIR)/
+
+dev_init_db:
+	@if [ -f "$(DEV_DIR)/$(DB)" ]; then \
+	    echo "Database already exists at $(DEV_DIR)/$(DB)"; \
+		read -p "Do you want to create a NEW one (backup current)? [y/N] " ans; \
+		if [ "$$ans" = "y" ]; then \
+			mv $(DEV_DIR)/$(DB) $(DEV_DIR)/$(DB).backup_`date +%Y%m%d%H%M%S`; \
+			touch $(DEV_DIR)/$(DB); \
+			echo "New database created and old one backed up."; \
+		else \
+			echo "Keeping existing database."; \
+		fi \
+	else \
+		echo "$(DEV_DIR)/$(DB)"; \
+	fi
 
 local: install_build
 	@echo "Installation into local folders."
-	getent group awpm || sudo groupadd awpm
+	getent group $(GROUP) || sudo groupadd $(GROUP)
 	@echo ""
-	@echo "DB into /var/local/awpm"
-	sudo mkdir -p /var/local/awpm
-	sudo chown root:awpm /var/local/awpm
-	sudo chmod 2770 /var/local/awpm
+	@echo "DB into $(LOCAL_DATA_DIR)"
+	sudo mkdir -p $(LOCAL_DATA_DIR)
+	sudo chown root:$(GROUP) $(LOCAL_DATA_DIR)
+	sudo chmod 2770 $(LOCAL_DATA_DIR)
 	@echo ""
-	@echo "Binary file into /usr/local/bin"
-	sudo install -m 755 -o root -g awpm $(TARGET) /usr/local/bin
+	@echo "Binary file into $(LOCAL_BIN)"
+	sudo install -m 755 -o root -g $(GROUP) $(TARGET) $(LOCAL_BIN)
 
 binupd: install_build
 	@echo "Update local binary file."
-	sudo install $(TARGET) /usr/local/bin
+	sudo install $(TARGET) $(LOCAL_BIN)
 
 ############################
 ### Uninstallation rules ###
 ############################
 
 uninstall:
-	sudo rm -f /usr/local/bin/$(TARGET)
+	sudo rm -f $(LOCAL_BIN)/$(TARGET)
 	sudo rm -f /usr/bin/$(TARGET)
 
 dd:
-	sudo rm -f /usr/local/bin/$(TARGET)
-	sudo rm -rf /var/local/awpm
-	sudo groupdel awpm
+	@if [ -f $(DEFAULT_CONFIG_DIR)/$(CONFIG) ]; then \
+		sudo rm -rf $(DEFAULT_CONFIG_DIR) \
+		rmdir $(DEFAULT_CONFIG_DIR) \
+	fi
+	sudo rm -f $(LOCAL_BIN)/$(TARGET)
+	sudo rm -rf $(LOCAL_DATA_DIR)
+	sudo groupdel $(GROUP)
 
 ### Clean rule ###
 clean:

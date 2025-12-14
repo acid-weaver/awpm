@@ -1,7 +1,7 @@
 /**
  * \file            config.c
  * \brief           Main entry point for the application
- * \author          Your GitHub Name
+ * \author          Acid Weaver
  * \date            2025-06-20
  * \details
  * Implements configuration functionality to use it across project needs.
@@ -23,19 +23,19 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "config.h"
+#include "core/config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "ini.h"
+#include "lib/ini.h"
 
 struct config cfg;
 
-static int handler(void *user, const char *section, const char *name,
-                   const char *value) {
-    struct config *cfg = (struct config *)user;
+static int handler(void* user, const char* section, const char* name,
+                   const char* value) {
+    struct config* cfg = (struct config*)user;
 
     if (strcmp(name, "db_path") == 0) {
         strncpy(cfg->db_path, value, sizeof(cfg->db_path) - 1);
@@ -49,7 +49,7 @@ static int handler(void *user, const char *section, const char *name,
     return 1;
 }
 
-int config_load(const char *path) {
+int config_load(const char* path) {
     // Set defaults
     memset(&cfg, 0, sizeof(cfg));
     strncpy(cfg.db_path, "/var/local/awpm/awpm.db", sizeof(cfg.db_path) - 1);

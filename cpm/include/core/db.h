@@ -29,8 +29,8 @@
 
 #include <sqlite3.h>
 
+#include "../lib/mem.h"
 #include "config.h"
-#include "mem.h"
 
 #define ACCESS_GROUP "awpm"
 #define USER_REGISTERED "Current user successfully registered to use AWPM.\n"
@@ -62,7 +62,7 @@ typedef struct {
  */
 
 int initialize_database(sqlite3** db, char* db_path);
-int move_db(sqlite3 *db, const char* new_path);
+int move_db(sqlite3* db, const char* new_path);
 
 /*
  * User related
