@@ -33,6 +33,7 @@
 #include "core/db.h"
 #include "core/encryption.h"
 #include "lib/awpm_utils.h"
+#include "lib/clipboard.h"
 #include "lib/mem.h"
 
 int verify_master_pswd(user_t user, binary_array_t* master_key) {
@@ -104,8 +105,19 @@ void display_cred_data(cred_data_t* results, int result_count) {
     printf("=========\n");
 }
 
-int copy_decrypted_cred_data(cred_data_t* results, int result_count,
-                             binary_array_t* master_key) {
+void output_cred_data(cred_data_t* results, int result_count) {
+    for (int i = 0; i < result_count; i++) {
+        binary_array_free(&results[i].pswd);
+        results[i].pswd = string_to_binary_array("***");
+        printf("=========\n");
+        printf("%s", cred_data_to_string(&results[i]));
+    }
+    printf("=========\n");
+}
+
+int output_decrypted_cred_data(cred_data_t* results, int result_count,
+                               binary_array_t* master_key) {
+    int status = 0;
     for (int i = 0; i < result_count; i++) {
         if (decrypt_data(master_key->ptr, results[i].iv, results[i].pswd,
                          &results[i].pswd)
@@ -114,10 +126,41 @@ int copy_decrypted_cred_data(cred_data_t* results, int result_count,
                     "Failed to decrypt password for credential data with "
                     "ID: %d.\n",
                     results[i].id);
+            status = -1;
         }
         printf("=========\n");
-        printf("%s", cred_data_to_string(&results[i]));
+
+        printf("Source: %s\n", results[i].source);
+
+        if (strcmp(cfg.login_output, "display") == 0) {
+            printf("Login: %s\n", results[i].login);
+        } else if (strcmp(cfg.login_output, "clipboard") == 0) {
+            printf("Login: %s\n", results[i].login);
+            printf("Login copied to clipboard. Waiting until paste.\n");
+            printf("%i\n", wl_copy_paste_once_bytes(results[i].login,
+                                                    strlen(results[i].login)));
+        }
+
+        if (strcmp(cfg.email_output, "display") == 0) {
+            printf("E-mail: %s\n", results[i].email);
+        } else if (strcmp(cfg.email_output, "clipboard") == 0) {
+            printf("E-mail: %s\n", results[i].email);
+            printf("E-mail copied to clipboard. Waiting until paste.\n");
+            printf("%i\n", wl_copy_paste_once_bytes(results[i].email,
+                                                    strlen(results[i].email)));
+        }
+
+        if (strcmp(cfg.pswd_output, "display") == 0) {
+            printf("Password: %s\n", binary_array_to_string(&results[i].pswd));
+        } else if (strcmp(cfg.pswd_output, "clipboard") == 0) {
+            printf("Password: %s\n", binary_array_to_string(&results[i].pswd));
+            printf("Password copied to clipboard. Waiting until paste.\n");
+            printf("%i\n", wl_copy_paste_once_bytes(results[i].pswd.ptr,
+                                                    results[i].pswd.len));
+        }
+
         binary_array_secure_free(&results[i].pswd);
     }
     printf("=========\n");
+    return status;
 }

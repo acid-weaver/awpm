@@ -20,10 +20,11 @@ DB = awpm.db
 # DEV_CONFIG_DIR is relative to TARGET (awpm binary) file. See config.c .
 DEV_DIR = ..
 DEV_CONFIG_DIR = .
+DEV_CONFIG = awpm.ini
 
 # Installation related
 GROUP = awpm
-DEFAULT_CONFIG_DIR = ~/.config/awpm
+CONFIG_DIR = ~/.config/awpm
 LOCAL_BIN = /usr/local/bin
 LOCAL_DATA_DIR = /var/local/awpm
 
@@ -45,11 +46,11 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 
 dev_build: CFLAGS += -DCONFIG_PATH=\"$(DEV_CONFIG_DIR)/$(CONFIG)\"
 dev_build: $(TARGET)
-	@echo "Built for development with local config: $(DEV_CONFIG_DIR)/$(CONFIG)"
+	@echo "Built for development with local config: $(DEV_CONFIG_DIR)/$(DEV_CONFIG)"
 
-install_build: CFLAGS += -DCONFIG_PATH=\"$(DEFAULT_CONFIG_DIR)/$(CONFIG)\"
+install_build: CFLAGS += -DCONFIG_PATH=\"$(CONFIG_DIR)/$(CONFIG)\"
 install_build: $(TARGET)
-	@echo "Built for install with config path: $(DEFAULT_CONFIG_DIR)/$(CONFIG)"
+	@echo "Built for install with config path: $(CONFIG_DIR)/$(CONFIG)"
 
 #################################
 ### Installation/update rules ###
@@ -114,9 +115,9 @@ uninstall:
 	sudo rm -f /usr/bin/$(TARGET)
 
 dd:
-	@if [ -f $(DEFAULT_CONFIG_DIR)/$(CONFIG) ]; then \
-		sudo rm -rf $(DEFAULT_CONFIG_DIR) \
-		rmdir $(DEFAULT_CONFIG_DIR) \
+	@if [ -f $(CONFIG_DIR)/$(CONFIG) ]; then \
+		sudo rm -rf $(CONFIG_DIR) \
+		rmdir $(CONFIG_DIR) \
 	fi
 	sudo rm -f $(LOCAL_BIN)/$(TARGET)
 	sudo rm -rf $(LOCAL_DATA_DIR)

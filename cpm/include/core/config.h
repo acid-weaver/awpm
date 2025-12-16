@@ -45,17 +45,18 @@
 #endif
 
 struct config {
-    int debug;                        // 0 (off) or 1 (on)
-    int multiple_accs_per_source;     // 0 (off) or 1 (on)
-    char cli_output[INPUT_BUFF_SIZE]; /* "full_clipboard" / "pswd_clipboard" /
-                                         "login_pswd_clipboard" /
-                                         "email_pswd_clipboard" / "display" /
-                                         "pswd_clipboard_display" */
+    int debug;                    // 0 (off) or 1 (on)
+    int multiple_accs_per_source; // 0 (off) or 1 (on)
     char db_path[INPUT_BUFF_SIZE * 2];
+
+    char login_output[INPUT_BUFF_SIZE];
+    char email_output[INPUT_BUFF_SIZE];
+    char pswd_output[INPUT_BUFF_SIZE];
 };
 
 extern struct config cfg;
 
+char* config_to_string();
 int config_load(const char* path);
 
 #endif // CONFIG_H

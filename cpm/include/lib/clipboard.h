@@ -1,10 +1,10 @@
 /**
- * \file            cli/cli_utils.h
- * \brief           Command-line interface utilities
+ * \file            clipboard.h
+ * \brief           Clipboard integration utilities
  * \author          Acid Weaver
- * \date            2025-04-27
+ * \date            2025-12-16
  * \details
- * Declares functions for implementation CLI.
+ * This file provides functions for clipboard usage.
  */
 
 /* Copyright (C) 2024-2025  Acid Weaver <acid.weaver@gmail.com>
@@ -23,17 +23,11 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef CLI_UTILS_H
-#define CLI_UTILS_H
+#ifndef CLIPBOARD_H
+#define CLIPBOARD_H
 
-#include "core/db.h"
+#include <stddef.h> // For size_t
 
-int verify_master_pswd(user_t user, binary_array_t* master_key);
+int wl_copy_paste_once_bytes(const void* data, size_t len);
 
-void display_decrypted_cred_data(cred_data_t* results, int result_count,
-                                 binary_array_t* master_key);
-void display_cred_data(cred_data_t* results, int result_count);
-int output_decrypted_cred_data(cred_data_t* results, int result_count,
-                               binary_array_t* master_key);
-
-#endif // CLI_UTILS_H
+#endif // CLIPBOARD_H

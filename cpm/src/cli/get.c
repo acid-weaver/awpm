@@ -99,7 +99,7 @@ void handle_get(struct sqlite3* db, user_t* user) {
         display_cred_data(results, result_count);
     } else {
         /* Here we should provide all data for entry, including pswd */
-        display_decrypted_cred_data(results, result_count, &master_key);
+        output_decrypted_cred_data(results, result_count, &master_key);
     }
 
     binary_array_secure_free(&master_key);

@@ -54,6 +54,10 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Config not found. Loading defaults.\n");
     }
 
+    if (cfg.debug != 0) {
+        printf("%s\n", config_to_string());
+    }
+
     user = user_init();
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], CLI_DEBUG_MODE) == 0) {
