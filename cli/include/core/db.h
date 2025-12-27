@@ -29,8 +29,8 @@
 
 #include <sqlite3.h>
 
-#include "../lib/mem.h"
 #include "config.h"
+#include "lib/mem.h"
 
 #define ACCESS_GROUP "awpm"
 #define USER_REGISTERED "Current user successfully registered to use AWPM.\n"

@@ -125,7 +125,7 @@ dd:
 
 ### Clean rule ###
 clean:
-	rm -rf $(OBJDIR) $(TARGET)
+	rm -rf $(OBJDIR) $(TARGET) $(DEV_DIR)/$(TARGET)
 
 ### Phony targets ###
 .PHONY: all clean
