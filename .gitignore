@@ -1,4 +1,4 @@
-cpm/pm
+pmcli
 
 .meta
 compile_commands.json
@@ -13,4 +13,3 @@ awpm.db*
 .git/
 bin/
 obj/
-
