@@ -77,25 +77,7 @@ int verify_master_pswd(user_t user, binary_array_t* master_key) {
     return 0;
 }
 
-void display_decrypted_cred_data(cred_data_t* results, int result_count,
-                                 binary_array_t* master_key) {
-    for (int i = 0; i < result_count; i++) {
-        if (decrypt_data(master_key->ptr, results[i].iv, results[i].pswd,
-                         &results[i].pswd)
-            != 0) {
-            fprintf(stderr,
-                    "Failed to decrypt password for credential data with "
-                    "ID: %d.\n",
-                    results[i].id);
-        }
-        printf("=========\n");
-        printf("%s", cred_data_to_string(&results[i]));
-        binary_array_secure_free(&results[i].pswd);
-    }
-    printf("=========\n");
-}
-
-void display_cred_data(cred_data_t* results, int result_count) {
+void display_list_cred_data(cred_data_t* results, int result_count) {
     for (int i = 0; i < result_count; i++) {
         binary_array_free(&results[i].pswd);
         results[i].pswd = string_to_binary_array("***");
@@ -105,19 +87,8 @@ void display_cred_data(cred_data_t* results, int result_count) {
     printf("=========\n");
 }
 
-void output_cred_data(cred_data_t* results, int result_count) {
-    for (int i = 0; i < result_count; i++) {
-        binary_array_free(&results[i].pswd);
-        results[i].pswd = string_to_binary_array("***");
-        printf("=========\n");
-        printf("%s", cred_data_to_string(&results[i]));
-    }
-    printf("=========\n");
-}
-
-int output_decrypted_cred_data(cred_data_t* results, int result_count,
-                               binary_array_t* master_key) {
-    int status = 0;
+void output_decrypted_cred_data(cred_data_t* results, int result_count,
+                                binary_array_t* master_key) {
     for (int i = 0; i < result_count; i++) {
         if (decrypt_data(master_key->ptr, results[i].iv, results[i].pswd,
                          &results[i].pswd)
@@ -126,7 +97,6 @@ int output_decrypted_cred_data(cred_data_t* results, int result_count,
                     "Failed to decrypt password for credential data with "
                     "ID: %d.\n",
                     results[i].id);
-            status = -1;
         }
         printf("=========\n");
 
@@ -153,14 +123,16 @@ int output_decrypted_cred_data(cred_data_t* results, int result_count,
         if (strcmp(cfg.pswd_output, "display") == 0) {
             printf("Password: %s\n", binary_array_to_string(&results[i].pswd));
         } else if (strcmp(cfg.pswd_output, "clipboard") == 0) {
-            printf("Password: %s\n", binary_array_to_string(&results[i].pswd));
             printf("Password copied to clipboard. Waiting until paste.\n");
-            printf("%i\n", wl_copy_paste_once_bytes(results[i].pswd.ptr,
-                                                    results[i].pswd.len));
+            if (wl_copy_paste_once_bytes(results[i].pswd.ptr,
+                                         results[i].pswd.len)
+                != 0) {
+                fprintf(stderr,
+                        "Failed to copy-paste once with wlclipboard.\n");
+            }
         }
 
         binary_array_secure_free(&results[i].pswd);
     }
     printf("=========\n");
-    return status;
 }

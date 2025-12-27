@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Iinclude -g
-LDFLAGS = -lsqlite3 -lssl -lcrypto
+LDFLAGS = -lsqlite3 -lssl -lcrypto -lncurses
 
 SRCDIR = src
 OBJDIR = obj
@@ -9,7 +9,7 @@ OBJDIR = obj
 SRCS = $(shell find $(SRCDIR) -type f -name '*.c')
 OBJS = $(SRCS:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
-TARGET = pm
+TARGET = pmcli
 CONFIG = awpm.ini
 DB = awpm.db
 

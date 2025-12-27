@@ -1,5 +1,5 @@
 /**
- * \file            cli.h
+ * \file            cli/cli.h
  * \brief           Command-line interface utilities
  * \author          Acid Weaver
  * \date            2024-12-23
@@ -27,10 +27,13 @@
 #ifndef CLI_H
 #define CLI_H
 
+#define CLI_VERSION = "1.0"
+#define CLI_VERSION_MAJOR = 1
+#define CLI_VERSION_MINOR = 0
+
 #define CLI_ADD "add"
 #define CLI_FORCE_ADD "add-f"
 #define CLI_GET "get"
-#define CLI_SHOW_ALL "show all"
 #define CLI_UPDATE "update"
 #define CLI_DELETE "delete"
 #define CLI_NEW_MASTER_PSWD "pswd"

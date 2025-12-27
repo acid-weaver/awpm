@@ -1,5 +1,5 @@
 /**
- * \file            config.h
+ * \file            core/config.h
  * \brief           App configuration
  * \author          Acid Weaver
  * \date            2025-06-20

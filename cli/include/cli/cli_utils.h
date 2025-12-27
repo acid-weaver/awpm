@@ -30,10 +30,8 @@
 
 int verify_master_pswd(user_t user, binary_array_t* master_key);
 
-void display_decrypted_cred_data(cred_data_t* results, int result_count,
-                                 binary_array_t* master_key);
-void display_cred_data(cred_data_t* results, int result_count);
-int output_decrypted_cred_data(cred_data_t* results, int result_count,
-                               binary_array_t* master_key);
+void display_list_cred_data(cred_data_t* results, int result_count);
+void output_decrypted_cred_data(cred_data_t* results, int result_count,
+                                binary_array_t* master_key);
 
 #endif // CLI_UTILS_H

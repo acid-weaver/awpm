@@ -1,5 +1,5 @@
 /**
- * \file            db.h
+ * \file            core/db.h
  * \brief           Database managment utilities
  * \author          Acid Weaver
  * \date            2024-12-23

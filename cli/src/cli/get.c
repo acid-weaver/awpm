@@ -96,7 +96,7 @@ void handle_get(struct sqlite3* db, user_t* user) {
     if (strlen(source) == 0) {
         /* Here we show list of all entries - Source, Login and E-mail */
         binary_array_secure_free(&master_key);
-        display_cred_data(results, result_count);
+        display_list_cred_data(results, result_count);
     } else {
         /* Here we should provide all data for entry, including pswd */
         output_decrypted_cred_data(results, result_count, &master_key);

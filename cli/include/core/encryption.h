@@ -1,5 +1,5 @@
 /**
- * \file            encryption.h
+ * \file            core/encryption.h
  * \brief           Encryption utilities
  * \author          Acid Weaver
  * \date            2024-12-23

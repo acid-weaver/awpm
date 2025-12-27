@@ -3,20 +3,19 @@
 all: pm
 
 pm:
-	$(MAKE) -C cpm
+	$(MAKE) -C cli
 
 clean:
-	$(MAKE) -C cpm clean
+	$(MAKE) -C cli clean
 
 install:
-	$(MAKE) -C cpm install
+	$(MAKE) -C cli install
 
 binupd:
-	$(MAKE) -C cpm binupd
+	$(MAKE) -C cli binupd
 
 uninstall:
-	$(MAKE) -C cpm uninstall
+	$(MAKE) -C cli uninstall
 
 dev:
-	$(MAKE) -C cpm dev
-
+	$(MAKE) -C cli dev
