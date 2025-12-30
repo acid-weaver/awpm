@@ -1,15 +1,14 @@
 .PHONY: all pm clean install uninstall dev
 
-all: pm
+all:
+	echo Specify action for make
 
-pm:
+cli:
 	$(MAKE) -C cli
 
 clean:
 	$(MAKE) -C cli clean
-
-install:
-	$(MAKE) -C cli install
+	$(MAKE) -C tui clean
 
 binupd:
 	$(MAKE) -C cli binupd

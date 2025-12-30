@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -Iinclude -g
-LDFLAGS = -lsqlite3 -lssl -lcrypto
+LDFLAGS = -lncurses -lpanel
 
 SRCDIR = src
 OBJDIR = obj
@@ -9,7 +9,7 @@ OBJDIR = obj
 SRCS = $(shell find $(SRCDIR) -type f -name '*.c')
 OBJS = $(SRCS:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
-TARGET = pmcli
+TARGET = pmtui
 CONFIG = awpm.ini
 DB = awpm.db
 
@@ -56,51 +56,8 @@ install_build: $(TARGET)
 ### Installation/update rules ###
 #################################
 
-init_db:
-	@if [ -f $(LOCAL_DATA_DIR)/$(DB) ]; then \
-		echo "Database already exists at $(LOCAL_DATA_DIR)/$(DB)"; \
-		read -p "Do you want to create a NEW one (backup current)? [y/N] " ans; \
-		if [ "$$ans" = "y" ]; then \
-			mv $(LOCAL_DATA_DIR)/$(DB) $(LOCAL_DATA_DIR)/$(DB).backup_`date +%Y%m%d%H%M%S`; \
-			touch $(LOCAL_DATA_DIR)/$(DB); \
-			echo "New database created and old one backed up."; \
-		else \
-			echo "Keeping existing database."; \
-		fi \
-	else \
-		echo "No existing database found. Creating new one..."; \
-		touch $(LOCAL_DATA_DIR)/$(DB); \
-	fi
-
-dev: dev_build
+dev: clean dev_build
 	install -m 755 $(TARGET) $(DEV_DIR)/
-
-dev_init_db:
-	@if [ -f "$(DEV_DIR)/$(DB)" ]; then \
-	    echo "Database already exists at $(DEV_DIR)/$(DB)"; \
-		read -p "Do you want to create a NEW one (backup current)? [y/N] " ans; \
-		if [ "$$ans" = "y" ]; then \
-			mv $(DEV_DIR)/$(DB) $(DEV_DIR)/$(DB).backup_`date +%Y%m%d%H%M%S`; \
-			touch $(DEV_DIR)/$(DB); \
-			echo "New database created and old one backed up."; \
-		else \
-			echo "Keeping existing database."; \
-		fi \
-	else \
-		echo "$(DEV_DIR)/$(DB)"; \
-	fi
-
-local: install_build
-	@echo "Installation into local folders."
-	getent group $(GROUP) || sudo groupadd $(GROUP)
-	@echo ""
-	@echo "DB into $(LOCAL_DATA_DIR)"
-	sudo mkdir -p $(LOCAL_DATA_DIR)
-	sudo chown root:$(GROUP) $(LOCAL_DATA_DIR)
-	sudo chmod 2770 $(LOCAL_DATA_DIR)
-	@echo ""
-	@echo "Binary file into $(LOCAL_BIN)"
-	sudo install -m 755 -o root -g $(GROUP) $(TARGET) $(LOCAL_BIN)
 
 binupd: install_build
 	@echo "Update local binary file."
@@ -113,15 +70,6 @@ binupd: install_build
 uninstall:
 	sudo rm -f $(LOCAL_BIN)/$(TARGET)
 	sudo rm -f /usr/bin/$(TARGET)
-
-dd:
-	@if [ -f $(CONFIG_DIR)/$(CONFIG) ]; then \
-		sudo rm -rf $(CONFIG_DIR) \
-		rmdir $(CONFIG_DIR) \
-	fi
-	sudo rm -f $(LOCAL_BIN)/$(TARGET)
-	sudo rm -rf $(LOCAL_DATA_DIR)
-	sudo groupdel $(GROUP)
 
 ### Clean rule ###
 clean:

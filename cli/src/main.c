@@ -1,7 +1,7 @@
 /**
- * \file            main.c
- * \brief           Main entry point for the application
- * \author          Your GitHub Name
+ * \file            cli/src/main.c
+ * \brief           Entry point to CLI.
+ * \author          Acid Weaver
  * \date            2024-12-21
  * \details
  * Initializes the application, parses command-line arguments, and invokes
